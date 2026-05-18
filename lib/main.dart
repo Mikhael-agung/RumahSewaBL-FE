@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/constants/variables.dart';
+import 'package:rumah_sewa_biru_laut_fe/core/controllers/user_controller.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/routes/route_app.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  Get.put(UserController(), permanent: true);
   runApp(const MyApp());
 }
 

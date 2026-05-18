@@ -213,7 +213,7 @@ class LoginScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: sp(12),
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF9E7C50), 
+                            color: ConstantColor.textPrimaryColor, 
                           ),
                         ),
                       ),
@@ -229,10 +229,7 @@ class LoginScreen extends StatelessWidget {
                       onPressed: controller.isLoading.value 
                           ? null 
                           : () async {
-                              bool success = await controller.login(context);
-                              if (success && context.mounted) {
-                                context.go(RouteName.dashboardScreen);
-                              }
+                              await controller.login(context);
                             },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: ConstantColor.buttonColor,

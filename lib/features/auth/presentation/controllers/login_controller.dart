@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/auth/domain/entities/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:rumah_sewa_biru_laut_fe/core/routes/route_name.dart';
+import 'package:rumah_sewa_biru_laut_fe/core/controllers/user_controller.dart';
 import '../../domain/usecases/login_usecase.dart';
 
 class LoginController extends GetxController {
@@ -16,10 +20,26 @@ class LoginController extends GetxController {
   var rememberMe = false.obs;
 
   @override
+  void onInit() {
+    super.onInit();
+    loadSavedCredentials();
+  }
+
+  @override
   void onClose() {
     usernameController.dispose();
     passwordController.dispose();
     super.onClose();
+  }
+
+  Future<void> loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? savedUsername = prefs.getString('saved_username');
+    
+    if (savedUsername != null && savedUsername.isNotEmpty) {
+      usernameController.text = savedUsername;
+      rememberMe.value = true;
+    }
   }
 
   void toggleObscureText() {
@@ -52,11 +72,25 @@ class LoginController extends GetxController {
         await prefs.setInt('user_id', user.id);
         await prefs.setString('user_username', user.username);
         await prefs.setString('user_role', user.role);
+
+        if (rememberMe.value) {
+          await prefs.setString('saved_username', user.username);
+        } else {
+          await prefs.remove('saved_username');
+        }
+        
+        final userController = Get.find<UserController>();
+        await userController.loadUserData();
         
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Login berhasil'), backgroundColor: Colors.green),
           );
+          
+          usernameController.clear();
+          passwordController.clear();
+          
+          await validateUser(user, context);
         }
         return true; 
       } else {
@@ -76,6 +110,31 @@ class LoginController extends GetxController {
       return false;
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> validateUser(User user, BuildContext context) async {
+    bool isValid = true;
+    String? targetRoute;
+
+    switch (user.role.toLowerCase()) {
+      case 'administrator':
+        targetRoute = RouteName.adminDashPage;
+        break;
+      case 'manager':
+        targetRoute = RouteName.managerDashPage;
+        break;
+      case 'tenant':
+        targetRoute = RouteName.tenantDashPage;
+        break;
+      default:
+        isValid = false;
+    }
+
+    if (isValid && targetRoute != null && context.mounted) {
+        context.go(targetRoute);
+    } else if (!isValid && context.mounted) {
+       context.go(RouteName.loginScreen);
     }
   }
 }
