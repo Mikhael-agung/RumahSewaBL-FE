@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:go_router/go_router.dart';
-import 'package:rumah_sewa_biru_laut_fe/core/routes/route_name.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/constants/colors.dart';
 import '../controllers/login_controller.dart';
 
@@ -293,6 +291,7 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
+  // ignore: unused_element
   Widget _buildRoleItem(String label, IconData icon, bool isWeb) {
     double w(double value) => isWeb ? value : value.w;
     double sp(double value) => isWeb ? value : value.sp;
