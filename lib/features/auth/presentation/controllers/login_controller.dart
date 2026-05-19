@@ -124,7 +124,7 @@ class LoginController extends GetxController {
       case 'manager':
         targetRoute = RouteName.managerDashPage;
         break;
-      case 'tenant':
+      case 'penyewa':
         targetRoute = RouteName.tenantDashPage;
         break;
       default:
