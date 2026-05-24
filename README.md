@@ -201,8 +201,6 @@ lib/
 
 <div align="center">
 
-Made with ❤️ for Rumah Sewa Biru Laut
-
 *Last updated: 24 Mei 2026*
 
 </div>
