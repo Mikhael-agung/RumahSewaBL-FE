@@ -1,10 +1,6 @@
-# 🏠 Rumah Sewa Biru Laut — Frontend
+#  Rumah Sewa Biru Laut — Frontend
 
 <div align="center">
-
-![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)
-![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?style=for-the-badge&logo=dart&logoColor=white)
-![Laravel](https://img.shields.io/badge/Backend-Laravel-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
 
 **Aplikasi Frontend (Flutter Web) untuk Sistem Sewa Rumah Kos Biru Laut**
 
@@ -16,7 +12,7 @@
 
 ---
 
-## 📋 Informasi Project
+##  Informasi Project
 
 | Field | Detail |
 |---|---|
@@ -28,7 +24,7 @@
 
 ---
 
-## 🔄 Alur Aplikasi
+##  Alur Aplikasi
 
 ```mermaid
 flowchart TD
@@ -42,7 +38,7 @@ flowchart TD
 
 ---
 
-## 🔌 Flow Koneksi ke Backend
+##  Flow Koneksi ke Backend
 
 ### Arsitektur Koneksi
 
@@ -152,7 +148,7 @@ flutter run -d chrome
 
 ---
 
-## 📁 Struktur Folder
+## Struktur Folder
 
 ```
 lib/
@@ -172,7 +168,7 @@ lib/
 
 ---
 
-## 👥 Role & Akses
+## Role & Akses
 
 | Role | Fitur Utama |
 |---|---|
@@ -182,16 +178,16 @@ lib/
 
 ---
 
-## 🚀 Progress Development
+##  Progress Development
 
-### ✅ Sprint 1 — Minggu 10
+### Sprint 1 — Minggu 10
 
 - [x] Auth + JWT Integration
 - [x] Payment Upload & History
 - [x] Dio Client + Interceptor
 - [x] Responsive UI
 
-### 🔜 Next Sprint
+###  Next Sprint
 
 - [ ] Booking System
 - [ ] Admin Dashboard
