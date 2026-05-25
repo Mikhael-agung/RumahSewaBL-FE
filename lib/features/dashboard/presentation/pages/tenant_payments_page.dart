@@ -68,60 +68,133 @@ class _TenantPaymentsPageState extends State<TenantPaymentsPage> {
         final username = snapshot.data ?? 'User';
         final displayName = username == 'User' ? 'Budi Santoso' : username;
 
-        return Scaffold(
-          backgroundColor: TenantColors.background,
-          body: Row(
-            children: [
-              TenantSidebar(
-                activeLabel: 'Payments',
-                onDashboardTap: () => context.go(RouteName.tenantDashPage),
-                onPaymentsTap: () => context.go(RouteName.tenantPaymentsPage),
-                onMaintenanceTap: _openMaintenanceSheet,
-              ),
-              Expanded(
-                child: Column(
-                  children: [
-                    TenantTopBar(displayName: displayName),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Padding(
-                          padding: const EdgeInsets.all(32),
-                          child: Center(
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 1280),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Pembayaran',
-                                    style: TextStyle(
-                                      fontFamily: 'Manrope',
-                                      fontSize: 32,
-                                      fontWeight: FontWeight.w800,
-                                      color: TenantColors.onBackground,
+        final isNarrowScreen = MediaQuery.of(context).size.width < 900;
+        final scaffoldKey = GlobalKey<ScaffoldState>();
+
+        if (!isNarrowScreen) {
+          return Scaffold(
+            backgroundColor: TenantColors.background,
+            body: Row(
+              children: [
+                TenantSidebar(
+                  activeLabel: 'Payments',
+                  onDashboardTap: () => context.go(RouteName.tenantDashPage),
+                  onPaymentsTap: () => context.go(RouteName.tenantPaymentsPage),
+                  onMaintenanceTap: _openMaintenanceSheet,
+                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      TenantTopBar(displayName: displayName),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Center(
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 1280),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Pembayaran',
+                                      style: TextStyle(
+                                        fontFamily: 'Manrope',
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.w800,
+                                        color: TenantColors.onBackground,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  const Text(
-                                    'Kelola dan pantau pembayaran sewa Anda',
-                                    style: TextStyle(
-                                      fontFamily: 'Inter',
-                                      fontSize: 14,
-                                      color: TenantColors.onSurfaceVariant,
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      'Kelola dan pantau pembayaran sewa Anda',
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 14,
+                                        color: TenantColors.onSurfaceVariant,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  const TenantBillingCard(),
-                                  const SizedBox(height: 24),
-                                  const TenantPaymentsHistoryTableCard(),
-                                ],
+                                    const SizedBox(height: 24),
+                                    const TenantBillingCard(),
+                                    const SizedBox(height: 24),
+                                    const TenantPaymentsHistoryTableCard(),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Scaffold(
+          key: scaffoldKey,
+          backgroundColor: TenantColors.background,
+          drawer: Drawer(
+            child: SafeArea(
+              child: TenantSidebar(
+                activeLabel: 'Payments',
+                onDashboardTap: () {
+                  Navigator.of(context).pop();
+                  context.go(RouteName.tenantDashPage);
+                },
+                onPaymentsTap: () {
+                  Navigator.of(context).pop();
+                  context.go(RouteName.tenantPaymentsPage);
+                },
+                onMaintenanceTap: () {
+                  Navigator.of(context).pop();
+                  _openMaintenanceSheet();
+                },
+              ),
+            ),
+          ),
+          body: Column(
+            children: [
+              TenantTopBar(displayName: displayName, onMenuTap: () => scaffoldKey.currentState?.openDrawer()),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 800),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Pembayaran',
+                              style: TextStyle(
+                                fontFamily: 'Manrope',
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                                color: TenantColors.onBackground,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Kelola dan pantau pembayaran sewa Anda',
+                              style: TextStyle(
+                                fontFamily: 'Inter',
+                                fontSize: 14,
+                                color: TenantColors.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            const TenantBillingCard(),
+                            const SizedBox(height: 16),
+                            const TenantPaymentsHistoryTableCard(),
+                          ],
+                        ),
+                      ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ],
