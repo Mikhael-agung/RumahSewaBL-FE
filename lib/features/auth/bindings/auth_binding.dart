@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
-// PENTING: Import file ConstantVariable kamu di sini
 import 'package:rumah_sewa_biru_laut_fe/core/constants/variables.dart';
 
 import '../data/datasources/auth_remote_data_source.dart';
@@ -12,7 +11,7 @@ import '../presentation/controllers/login_controller.dart';
 class AuthBinding extends Bindings {
   @override
   void dependencies() {
-    // Dio instance menggunakan ConstantVariable
+    // Dio Client
     Get.lazyPut<Dio>(() => Dio(BaseOptions(
       baseUrl: ConstantVariable.baseUrl,
       connectTimeout: ConstantVariable.connectTimeout,

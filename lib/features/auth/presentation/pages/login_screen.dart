@@ -9,7 +9,6 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Inisialisasi controller dihilangkan di sini karena sudah di-inject via AuthBinding
     final controller = Get.find<LoginController>();
 
     return Scaffold(

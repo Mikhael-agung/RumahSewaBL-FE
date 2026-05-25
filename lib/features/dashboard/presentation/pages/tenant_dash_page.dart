@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/constants/tenant_colors.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/layout/tenant_layout.dart';
-// If you want exact Manrope/Inter fonts, add them to assets/fonts and
-// register in pubspec.yaml. For now we use fontFamily strings so the app
-// can build without the google_fonts package (avoids web const-eval issues).
 
 double _fontScale(BuildContext context) {
   final w = MediaQuery.of(context).size.width;
