@@ -24,9 +24,51 @@ class RouteApp{
       GoRoute(
         path: RouteName.managerDashPage,
         name: RouteName.managerDashPage,
-        builder: (context, state) {
-          return const ManagerDashPage();
-        },
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: ManagerDashPage(activeMenu: "Dashboard"),
+        ),
+      ),
+      GoRoute(
+        path: RouteName.managerPropertiesPage,
+        name: RouteName.managerPropertiesPage,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: ManagerDashPage(activeMenu: "Properties"),
+        ),
+      ),
+      GoRoute(
+        path: RouteName.managerTenantsPage,
+        name: RouteName.managerTenantsPage,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: ManagerDashPage(activeMenu: "Tenants"),
+        ),
+      ),
+      GoRoute(
+        path: RouteName.managerPaymentsPage,
+        name: RouteName.managerPaymentsPage,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: ManagerDashPage(activeMenu: "Payments"),
+        ),
+      ),
+      GoRoute(
+        path: RouteName.managerMaintenancePage,
+        name: RouteName.managerMaintenancePage,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: ManagerDashPage(activeMenu: "Maintenance"),
+        ),
+      ),
+      GoRoute(
+        path: RouteName.managerSettingsPage,
+        name: RouteName.managerSettingsPage,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: ManagerDashPage(activeMenu: "Settings"),
+        ),
+      ),
+      GoRoute(
+        path: RouteName.managerSupportPage,
+        name: RouteName.managerSupportPage,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: ManagerDashPage(activeMenu: "Support"),
+        ),
       ),
       GoRoute(
         path: RouteName.adminDashPage,

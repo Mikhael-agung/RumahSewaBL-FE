@@ -49,7 +49,7 @@ class LoginScreen extends StatelessWidget {
     double r(double value) => isWeb ? value : value.r;
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: w(24), vertical: h(48)),
+      padding: EdgeInsets.symmetric(horizontal: w(24), vertical: h(20)),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -57,14 +57,34 @@ class LoginScreen extends StatelessWidget {
           Container(
             width: w(80),
             height: w(80),
-            decoration: const BoxDecoration(
-              color: ConstantColor.iconBgColor,
+            decoration: BoxDecoration(
+              color: Colors.white,
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF005D90).withValues(alpha: 0.15),
+                  blurRadius: 15,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+              border: Border.all(color: const Color(0xFFE2EFFC), width: 3),
             ),
-            child: Icon(
-              Icons.home,
-              color: ConstantColor.textPrimaryColor,
-              size: w(40),
+            child: Center(
+              child: Container(
+                width: w(56),
+                height: w(56),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF0077B6),
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.home_outlined,
+                    color: Colors.white,
+                    size: w(32),
+                  ),
+                ),
+              ),
             ),
           ),
           SizedBox(height: h(24)),
@@ -75,7 +95,6 @@ class LoginScreen extends StatelessWidget {
               fontSize: sp(28),
               fontWeight: FontWeight.bold,
               color: ConstantColor.textPrimaryColor,
-              fontFamily: 'Serif',
             ),
             textAlign: TextAlign.center,
           ),
@@ -101,9 +120,9 @@ class LoginScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(r(24)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 25,
+                    offset: const Offset(0, 10),
                   ),
                 ],
               ),
@@ -116,7 +135,7 @@ class LoginScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: sp(14),
                       fontWeight: FontWeight.w600,
-                      color: ConstantColor.textPrimaryColor,
+                      color: ConstantColor.textDarkColor,
                     ),
                   ),
                   SizedBox(height: h(8)),
@@ -125,7 +144,7 @@ class LoginScreen extends StatelessWidget {
                     decoration: InputDecoration(
                       hintText: "Enter your username",
                       hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: sp(14)),
-                      prefixIcon: Icon(Icons.person, color: Colors.grey.shade400, size: w(20)),
+                      prefixIcon: Icon(Icons.person_outline_rounded, color: Colors.grey.shade400, size: w(20)),
                       filled: true,
                       fillColor: ConstantColor.backgroundColor, 
                       border: OutlineInputBorder(
@@ -144,7 +163,7 @@ class LoginScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: sp(14),
                       fontWeight: FontWeight.w600,
-                      color: ConstantColor.textPrimaryColor,
+                      color: ConstantColor.textDarkColor,
                     ),
                   ),
                   SizedBox(height: h(8)),
@@ -154,10 +173,10 @@ class LoginScreen extends StatelessWidget {
                     decoration: InputDecoration(
                       hintText: "Enter your password",
                       hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: sp(14)),
-                      prefixIcon: Icon(Icons.lock, color: Colors.grey.shade400, size: w(20)),
+                      prefixIcon: Icon(Icons.lock_outline_rounded, color: Colors.grey.shade400, size: w(20)),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          controller.obscureText.value ? Icons.visibility : Icons.visibility_off,
+                          controller.obscureText.value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
                           color: Colors.grey.shade400,
                           size: w(20),
                         ),
@@ -185,7 +204,7 @@ class LoginScreen extends StatelessWidget {
                           value: controller.rememberMe.value,
                           activeColor: ConstantColor.buttonColor,
                           shape: const CircleBorder(),
-                          side: BorderSide(color: Colors.grey.shade400),
+                          side: BorderSide(color: Colors.grey.shade300),
                           onChanged: controller.toggleRememberMe,
                         )),
                       ),
@@ -193,7 +212,7 @@ class LoginScreen extends StatelessWidget {
                       Text(
                         "Remember Me",
                         style: TextStyle(
-                          fontSize: sp(12),
+                          fontSize: sp(14),
                           color: ConstantColor.textSecondaryColor,
                         ),
                       ),
@@ -208,9 +227,9 @@ class LoginScreen extends StatelessWidget {
                         child: Text(
                           "Lupa Password?",
                           style: TextStyle(
-                            fontSize: sp(12),
+                            fontSize: sp(14),
                             fontWeight: FontWeight.w600,
-                            color: ConstantColor.textPrimaryColor, 
+                            color: ConstantColor.linkColor, 
                           ),
                         ),
                       ),
@@ -221,7 +240,7 @@ class LoginScreen extends StatelessWidget {
                   // Login Button
                   SizedBox(
                     width: double.infinity,
-                    height: h(48),
+                    height: h(54),
                     child: Obx(() => ElevatedButton(
                       onPressed: controller.isLoading.value 
                           ? null 
@@ -234,7 +253,8 @@ class LoginScreen extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(r(12)),
                         ),
-                        elevation: 0,
+                        elevation: 2,
+                        shadowColor: ConstantColor.buttonColor.withValues(alpha: 0.25),
                       ),
                       child: controller.isLoading.value
                           ? SizedBox(
@@ -251,13 +271,13 @@ class LoginScreen extends StatelessWidget {
                                 Text(
                                   "Masuk",
                                   style: TextStyle(
-                                    fontSize: sp(14),
+                                    fontSize: sp(16),
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
                                   ),
                                 ),
                                 SizedBox(width: w(8)),
-                                Icon(Icons.login, color: Colors.white, size: w(18)),
+                                Icon(Icons.login, color: Colors.white, size: w(20)),
                               ],
                             ),
                     )),
@@ -268,18 +288,24 @@ class LoginScreen extends StatelessWidget {
             ),
           ),
           
-          SizedBox(height: h(48)),
-          // Bottom Image Placeholder
+          SizedBox(height: h(32)),
+          // Bottom Image
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
             child: Container(
-              height: h(150),
+              height: h(160),
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(r(24))),
+                borderRadius: BorderRadius.circular(r(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
                 image: const DecorationImage(
-                  image: NetworkImage("https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=600&q=80"),
+                  image: NetworkImage("https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80"),
                   fit: BoxFit.cover,
                 ),
               ),
