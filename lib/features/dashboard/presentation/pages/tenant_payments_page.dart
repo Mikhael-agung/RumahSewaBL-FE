@@ -14,9 +14,17 @@ class TenantPaymentsPage extends StatefulWidget {
 }
 
 class _TenantPaymentsPageState extends State<TenantPaymentsPage> {
+  int _historyRefreshToken = 0;
+
   Future<String> _getUsername() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('user_username') ?? 'User';
+  }
+
+  void _refreshHistory() {
+    setState(() {
+      _historyRefreshToken++;
+    });
   }
 
   Future<void> _openMaintenanceSheet() async {
@@ -115,9 +123,9 @@ class _TenantPaymentsPageState extends State<TenantPaymentsPage> {
                                       ),
                                     ),
                                     const SizedBox(height: 24),
-                                    const TenantBillingCard(),
+                                    TenantBillingCard(onUploaded: _refreshHistory),
                                     const SizedBox(height: 24),
-                                    const TenantPaymentsHistoryTableCard(),
+                                    TenantPaymentsHistoryTableCard(key: ValueKey(_historyRefreshToken)),
                                   ],
                                 ),
                               ),
@@ -187,9 +195,9 @@ class _TenantPaymentsPageState extends State<TenantPaymentsPage> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            const TenantBillingCard(),
+                            TenantBillingCard(onUploaded: _refreshHistory),
                             const SizedBox(height: 16),
-                            const TenantPaymentsHistoryTableCard(),
+                            TenantPaymentsHistoryTableCard(key: ValueKey(_historyRefreshToken)),
                           ],
                         ),
                       ),

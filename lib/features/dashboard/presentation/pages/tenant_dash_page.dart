@@ -22,9 +22,17 @@ class TenantDashPage extends StatefulWidget {
 }
 
 class _TenantDashPageState extends State<TenantDashPage> {
+  int _historyRefreshToken = 0;
+
   Future<String> _getUsername() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('user_username') ?? 'User';
+  }
+
+  void _refreshHistory() {
+    setState(() {
+      _historyRefreshToken++;
+    });
   }
 
   Future<void> _openMaintenanceSheet() async {
@@ -123,7 +131,7 @@ class _TenantDashPageState extends State<TenantDashPage> {
                                                   const SizedBox(width: 24),
                                                   Expanded(
                                                     flex: 4,
-                                                    child: TenantBillingCard(),
+                                                    child: TenantBillingCard(onUploaded: _refreshHistory),
                                                   ),
                                                 ],
                                               );
@@ -133,7 +141,7 @@ class _TenantDashPageState extends State<TenantDashPage> {
                                               children: [
                                                 const _RoomCard(),
                                                 const SizedBox(height: 24),
-                                                const TenantBillingCard(),
+                                                TenantBillingCard(onUploaded: _refreshHistory),
                                               ],
                                             );
                                           },
@@ -154,9 +162,9 @@ class _TenantDashPageState extends State<TenantDashPage> {
                                                     ),
                                                   ),
                                                   const SizedBox(width: 24),
-                                                  const Expanded(
+                                                  Expanded(
                                                     flex: 8,
-                                                    child: TenantHistoryCard(),
+                                                    child: TenantHistoryCard(key: ValueKey(_historyRefreshToken)),
                                                   ),
                                                 ],
                                               );
@@ -168,7 +176,7 @@ class _TenantDashPageState extends State<TenantDashPage> {
                                                   onPressed: _openMaintenanceSheet,
                                                 ),
                                                 const SizedBox(height: 24),
-                                                const TenantHistoryCard(),
+                                                TenantHistoryCard(key: ValueKey(_historyRefreshToken)),
                                               ],
                                             );
                                           },
@@ -249,11 +257,11 @@ class _TenantDashPageState extends State<TenantDashPage> {
                                 const SizedBox(height: 16),
                                 const _RoomCard(),
                                 const SizedBox(height: 16),
-                                const TenantBillingCard(),
+                                TenantBillingCard(onUploaded: _refreshHistory),
                                 const SizedBox(height: 16),
                                 _SupportCard(onPressed: _openMaintenanceSheet),
                                 const SizedBox(height: 16),
-                                const TenantHistoryCard(),
+                                TenantHistoryCard(key: ValueKey(_historyRefreshToken)),
                                 const SizedBox(height: 20),
                                 Center(
                                   child: Text(
