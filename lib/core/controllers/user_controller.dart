@@ -8,6 +8,10 @@ class UserController extends GetxController {
   var role = ''.obs;
   var token = ''.obs;
 
+  String _normalizeRole(String value) {
+    return value.trim().toLowerCase().replaceAll(RegExp(r'[\s_-]+'), '');
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -25,7 +29,22 @@ class UserController extends GetxController {
 
   // Fungsi pembantu untuk mengecek role
   bool hasRole(String targetRole) {
-    return role.value.toLowerCase() == targetRole.toLowerCase();
+    final normalizedUserRole = _normalizeRole(role.value);
+    final normalizedTargetRole = _normalizeRole(targetRole);
+
+    if (normalizedUserRole == normalizedTargetRole) {
+      return true;
+    }
+
+    const roleAliases = <String, Set<String>>{
+      'administrator': {'admin', 'superadmin', 'roleadmin'},
+      'manager': {'staff', 'petugas', 'rolemanager'},
+      'tenant': {'penyewa', 'user', 'roletenant'},
+    };
+
+    return roleAliases[normalizedTargetRole]?.contains(normalizedUserRole) ==
+            true ||
+        roleAliases[normalizedUserRole]?.contains(normalizedTargetRole) == true;
   }
 
   // Getters untuk mempermudah pengecekan role yang umum
