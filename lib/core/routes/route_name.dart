@@ -4,4 +4,5 @@ class RouteName{
   static const String managerDashPage = '/managerDashPage';
   static const String adminDashPage = '/adminDashPage';
   static const String tenantDashPage = '/tenantDashPage';
+  static const String tenantPaymentsPage = '/tenantPaymentsPage';
 }
