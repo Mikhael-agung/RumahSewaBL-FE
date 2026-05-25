@@ -4,8 +4,6 @@ import 'package:rumah_sewa_biru_laut_fe/core/constants/tenant_colors.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/routes/route_name.dart';
 import 'package:go_router/go_router.dart';
 
-// Tenant-specific reusable layout widgets: sidebar, topbar, floating chat button.
-
 class TenantSidebar extends StatelessWidget {
   const TenantSidebar({super.key});
 

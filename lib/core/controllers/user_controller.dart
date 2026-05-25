@@ -2,7 +2,6 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserController extends GetxController {
-  // Observable variables agar UI bisa otomatis terupdate jika data berubah
   var id = 0.obs;
   var username = ''.obs;
   var role = ''.obs;
@@ -18,7 +17,6 @@ class UserController extends GetxController {
     loadUserData();
   }
 
-  // Fungsi untuk memuat data dari SharedPreferences
   Future<void> loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     id.value = prefs.getInt('user_id') ?? 0;
@@ -27,7 +25,6 @@ class UserController extends GetxController {
     token.value = prefs.getString('jwt_token') ?? '';
   }
 
-  // Fungsi pembantu untuk mengecek role
   bool hasRole(String targetRole) {
     final normalizedUserRole = _normalizeRole(role.value);
     final normalizedTargetRole = _normalizeRole(targetRole);
@@ -47,12 +44,10 @@ class UserController extends GetxController {
         roleAliases[normalizedUserRole]?.contains(normalizedTargetRole) == true;
   }
 
-  // Getters untuk mempermudah pengecekan role yang umum
   bool get isAdmin => hasRole('administrator');
   bool get isTenant => hasRole('tenant');
   bool get isManager => hasRole('manager');
 
-  // Fungsi untuk membersihkan data (saat logout)
   void clearUserData() {
     id.value = 0;
     username.value = '';

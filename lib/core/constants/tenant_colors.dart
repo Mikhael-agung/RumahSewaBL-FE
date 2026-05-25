@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Tenant-specific color palette (from the Tailwind design provided).
-/// Use these constants in tenant UI to match the dashboard screenshot.
 class TenantColors {
   TenantColors._();
 
