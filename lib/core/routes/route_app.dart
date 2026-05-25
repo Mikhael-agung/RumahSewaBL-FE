@@ -7,6 +7,7 @@ import 'package:rumah_sewa_biru_laut_fe/features/auth/presentation/pages/login_s
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/pages/manager_dash_page.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/pages/admin_dash_page.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/pages/tenant_dash_page.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/pages/tenant_payments_page.dart';
 
 class RouteApp{
   static final router = GoRouter(
@@ -40,6 +41,13 @@ class RouteApp{
         name: RouteName.tenantDashPage,
         builder: (context, state) {
           return const TenantDashPage();
+        },
+      ),
+      GoRoute(
+        path: RouteName.tenantPaymentsPage,
+        name: RouteName.tenantPaymentsPage,
+        builder: (context, state) {
+          return const TenantPaymentsPage();
         },
       ),
     ],
