@@ -22,9 +22,22 @@ class BaseDashboardLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userController = Get.find<UserController>();
+    final isMobile = MediaQuery.of(context).size.width < 1024;
 
     return Scaffold(
       backgroundColor: ConstantColor.backgroundColor,
+      drawer: isMobile ? Obx(() {
+        final username = userController.username.value;
+        final role = userController.role.value;
+        final currentActiveMenu = activeMenu ?? userController.activeMenu.value;
+        final displayRole = role.isNotEmpty 
+            ? "${role[0].toUpperCase()}${role.substring(1).toLowerCase()} Aktif" 
+            : "Manager Aktif";
+        return Drawer(
+          width: 260,
+          child: _buildSidebar(context, username, displayRole, currentActiveMenu, userController, isMobile),
+        );
+      }) : null,
       body: Obx(() {
         final username = userController.username.value;
         final role = userController.role.value;
@@ -37,27 +50,30 @@ class BaseDashboardLayout extends StatelessWidget {
 
         return Row(
           children: [
-            _buildSidebar(context, username, displayRole, currentActiveMenu, userController),
+            if (!isMobile) _buildSidebar(context, username, displayRole, currentActiveMenu, userController, isMobile),
             Expanded(
               child: Column(
                 children: [
-                  _buildTopAppBar(context, username),
+                  _buildTopAppBar(context, username, isMobile),
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 32.0),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isMobile ? 16.0 : 40.0,
+                        vertical: isMobile ? 20.0 : 32.0,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (title != null) ...[
                             Text(
                               title!,
-                              style: const TextStyle(
-                                fontSize: 32,
+                              style: TextStyle(
+                                fontSize: isMobile ? 24 : 32,
                                 fontWeight: FontWeight.bold,
                                 color: ConstantColor.textPrimaryColor,
                               ),
                             ),
-                            const SizedBox(height: 32),
+                            SizedBox(height: isMobile ? 20 : 32),
                           ],
                           child,
                           const SizedBox(height: 48),
@@ -75,7 +91,7 @@ class BaseDashboardLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildSidebar(BuildContext context, String username, String role, String activeMenu, UserController userController) {
+  Widget _buildSidebar(BuildContext context, String username, String role, String activeMenu, UserController userController, bool isMobile) {
     return Container(
       width: 260,
       decoration: const BoxDecoration(
@@ -153,6 +169,7 @@ class BaseDashboardLayout extends StatelessWidget {
               padding: EdgeInsets.zero,
               children: [
                 _buildNavItem(Icons.dashboard_outlined, "Dashboard", activeMenu == "Dashboard", () {
+                  if (isMobile) Navigator.pop(context);
                   if (userController.isManager) {
                     context.go(RouteName.managerDashPage);
                   } else {
@@ -160,6 +177,7 @@ class BaseDashboardLayout extends StatelessWidget {
                   }
                 }),
                 _buildNavItem(Icons.business_outlined, "Properties", activeMenu == "Properties", () {
+                  if (isMobile) Navigator.pop(context);
                   if (userController.isManager) {
                     context.go(RouteName.managerPropertiesPage);
                   } else {
@@ -167,6 +185,7 @@ class BaseDashboardLayout extends StatelessWidget {
                   }
                 }),
                 _buildNavItem(Icons.people_outline, "Tenants", activeMenu == "Tenants", () {
+                  if (isMobile) Navigator.pop(context);
                   if (userController.isManager) {
                     context.go(RouteName.managerTenantsPage);
                   } else {
@@ -174,6 +193,7 @@ class BaseDashboardLayout extends StatelessWidget {
                   }
                 }),
                 _buildNavItem(Icons.payment_outlined, "Payments", activeMenu == "Payments", () {
+                  if (isMobile) Navigator.pop(context);
                   if (userController.isManager) {
                     context.go(RouteName.managerPaymentsPage);
                   } else {
@@ -181,6 +201,7 @@ class BaseDashboardLayout extends StatelessWidget {
                   }
                 }),
                 _buildNavItem(Icons.build_outlined, "Maintenance", activeMenu == "Maintenance", () {
+                  if (isMobile) Navigator.pop(context);
                   if (userController.isManager) {
                     context.go(RouteName.managerMaintenancePage);
                   } else {
@@ -188,6 +209,7 @@ class BaseDashboardLayout extends StatelessWidget {
                   }
                 }),
                 _buildNavItem(Icons.settings_outlined, "Settings", activeMenu == "Settings", () {
+                  if (isMobile) Navigator.pop(context);
                   if (userController.isManager) {
                     context.go(RouteName.managerSettingsPage);
                   } else {
@@ -195,6 +217,7 @@ class BaseDashboardLayout extends StatelessWidget {
                   }
                 }),
                 _buildNavItem(Icons.help_outline, "Support", activeMenu == "Support", () {
+                  if (isMobile) Navigator.pop(context);
                   if (userController.isManager) {
                     context.go(RouteName.managerSupportPage);
                   } else {
@@ -261,9 +284,12 @@ class BaseDashboardLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildTopAppBar(BuildContext context, String username) {
+  Widget _buildTopAppBar(BuildContext context, String username, bool isMobile) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 16.0),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 16.0 : 40.0,
+        vertical: 16.0,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(
@@ -272,36 +298,56 @@ class BaseDashboardLayout extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Date
-          const Text(
-            "20 Oktober 2023",
-            style: TextStyle(
-              color: ConstantColor.textSecondaryColor,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+          if (isMobile) ...[
+            Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.menu, color: ConstantColor.textPrimaryColor),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+              ),
             ),
-          ),
+            const SizedBox(width: 8),
+            const Text(
+              "Biru Laut",
+              style: TextStyle(
+                color: ConstantColor.primaryColor,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ] else ...[
+            // Date
+            const Text(
+              "20 Oktober 2023",
+              style: TextStyle(
+                color: ConstantColor.textSecondaryColor,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
           const Spacer(),
           
           // Search Bar
-          Container(
-            width: 320,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Cari penyewa atau kamar...",
-                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
-                prefixIcon: Icon(Icons.search, color: Colors.grey.shade400, size: 18),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 9),
+          if (!isMobile) ...[
+            Container(
+              width: 320,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: "Cari penyewa atau kamar...",
+                  hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                  prefixIcon: Icon(Icons.search, color: Colors.grey.shade400, size: 18),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 9),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 24),
+            const SizedBox(width: 24),
+          ],
           
           // Notification Icon with red dot badge
           Stack(
@@ -329,23 +375,29 @@ class BaseDashboardLayout extends StatelessWidget {
           const SizedBox(width: 24),
           
           // Logout Button
-          OutlinedButton(
-            onPressed: () => _logout(context),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFFE2E8F0)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          if (isMobile)
+            IconButton(
+              icon: Icon(Icons.logout, color: Colors.red.shade700),
+              onPressed: () => _logout(context),
+            )
+          else
+            OutlinedButton(
+              onPressed: () => _logout(context),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFE2E8F0)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            ),
-            child: const Text(
-              "Logout",
-              style: TextStyle(
-                color: ConstantColor.textPrimaryColor,
-                fontWeight: FontWeight.bold,
+              child: const Text(
+                "Logout",
+                style: TextStyle(
+                  color: ConstantColor.textPrimaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
