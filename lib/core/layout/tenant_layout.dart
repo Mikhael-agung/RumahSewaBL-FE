@@ -5,7 +5,18 @@ import 'package:rumah_sewa_biru_laut_fe/core/routes/route_name.dart';
 import 'package:go_router/go_router.dart';
 
 class TenantSidebar extends StatelessWidget {
-  const TenantSidebar({super.key});
+  final String activeLabel;
+  final VoidCallback? onDashboardTap;
+  final VoidCallback? onPaymentsTap;
+  final VoidCallback? onMaintenanceTap;
+
+  const TenantSidebar({
+    super.key,
+    this.activeLabel = 'Dashboard',
+    this.onDashboardTap,
+    this.onPaymentsTap,
+    this.onMaintenanceTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -50,13 +61,28 @@ class TenantSidebar extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Column(
-                children: const [
-                  _SidebarItem(icon: Icons.dashboard_outlined, label: 'Dashboard', active: true),
-                  _SidebarItem(icon: Icons.payments_outlined, label: 'Payments'),
-                  _SidebarItem(icon: Icons.handyman_outlined, label: 'Maintenance'),
-                  Spacer(),
-                  _SidebarItem(icon: Icons.settings_outlined, label: 'Settings'),
-                  _SidebarItem(icon: Icons.help_outline, label: 'Support'),
+                children: [
+                  _SidebarItem(
+                    icon: Icons.dashboard_outlined,
+                    label: 'Dashboard',
+                    active: activeLabel == 'Dashboard',
+                    onTap: onDashboardTap,
+                  ),
+                  _SidebarItem(
+                    icon: Icons.payments_outlined,
+                    label: 'Payments',
+                    active: activeLabel == 'Payments',
+                    onTap: onPaymentsTap,
+                  ),
+                  _SidebarItem(
+                    icon: Icons.handyman_outlined,
+                    label: 'Maintenance',
+                    active: activeLabel == 'Maintenance',
+                    onTap: onMaintenanceTap,
+                  ),
+                  const Spacer(),
+                  const _SidebarItem(icon: Icons.settings_outlined, label: 'Settings'),
+                  const _SidebarItem(icon: Icons.help_outline, label: 'Support'),
                 ],
               ),
             ),
@@ -71,8 +97,9 @@ class _SidebarItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool active;
+  final VoidCallback? onTap;
 
-  const _SidebarItem({required this.icon, required this.label, this.active = false});
+  const _SidebarItem({required this.icon, required this.label, this.active = false, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -92,6 +119,7 @@ class _SidebarItem extends StatelessWidget {
               fontWeight: active ? FontWeight.w800 : FontWeight.w600,
               color: active ? TenantColors.primary : TenantColors.onSurfaceVariant,
             )),
+        onTap: onTap,
       ),
     );
   }

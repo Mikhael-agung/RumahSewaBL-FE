@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/constants/tenant_colors.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/layout/tenant_layout.dart';
+import 'package:go_router/go_router.dart';
+import 'package:rumah_sewa_biru_laut_fe/core/routes/route_name.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/widgets/tenant_payment_sections.dart';
 
 double _fontScale(BuildContext context) {
   final w = MediaQuery.of(context).size.width;
@@ -11,12 +14,58 @@ double _fontScale(BuildContext context) {
   return 1.0;
 }
 
-class TenantDashPage extends StatelessWidget {
+class TenantDashPage extends StatefulWidget {
   const TenantDashPage({super.key});
 
+  @override
+  State<TenantDashPage> createState() => _TenantDashPageState();
+}
+
+class _TenantDashPageState extends State<TenantDashPage> {
   Future<String> _getUsername() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('user_username') ?? 'User';
+  }
+
+  Future<void> _openMaintenanceSheet() async {
+    if (!mounted) return;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Ajukan Keluhan Maintenance',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: TenantColors.onBackground),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Tombol ini sudah aktif. Silakan lanjutkan ke menu yang dibutuhkan atau hubungi admin.',
+                style: TextStyle(fontSize: 13, color: TenantColors.onSurfaceVariant),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () => Navigator.of(sheetContext).pop(),
+                  child: const Text('Tutup'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -33,7 +82,12 @@ class TenantDashPage extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const TenantSidebar(),
+                  TenantSidebar(
+                    activeLabel: 'Dashboard',
+                    onDashboardTap: () => context.go(RouteName.tenantDashPage),
+                    onPaymentsTap: () => context.go(RouteName.tenantPaymentsPage),
+                    onMaintenanceTap: _openMaintenanceSheet,
+                  ),
                   Expanded(
                     child: Column(
                       children: [
@@ -62,20 +116,20 @@ class TenantDashPage extends StatelessWidget {
                                                   flex: 8,
                                                   child: _RoomCard(),
                                                 ),
-                                                SizedBox(width: 24),
+                                                const SizedBox(width: 24),
                                                 Expanded(
                                                   flex: 4,
-                                                  child: _BillingCard(),
+                                                  child: TenantBillingCard(),
                                                 ),
                                               ],
                                             );
                                           }
 
-                                          return const Column(
+                                          return Column(
                                             children: [
-                                              _RoomCard(),
-                                              SizedBox(height: 24),
-                                              _BillingCard(),
+                                              const _RoomCard(),
+                                              const SizedBox(height: 24),
+                                              const TenantBillingCard(),
                                             ],
                                           );
                                         },
@@ -88,25 +142,29 @@ class TenantDashPage extends StatelessWidget {
                                           if (isWide) {
                                             return Row(
                                               crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: const [
+                                              children: [
                                                 Expanded(
                                                   flex: 4,
-                                                  child: _SupportCard(),
+                                                  child: _SupportCard(
+                                                    onPressed: _openMaintenanceSheet,
+                                                  ),
                                                 ),
-                                                SizedBox(width: 24),
-                                                Expanded(
+                                                const SizedBox(width: 24),
+                                                const Expanded(
                                                   flex: 8,
-                                                  child: _HistoryCard(),
+                                                  child: TenantHistoryCard(),
                                                 ),
                                               ],
                                             );
                                           }
 
-                                          return const Column(
+                                          return Column(
                                             children: [
-                                              _SupportCard(),
-                                              SizedBox(height: 24),
-                                              _HistoryCard(),
+                                              _SupportCard(
+                                                onPressed: _openMaintenanceSheet,
+                                              ),
+                                              const SizedBox(height: 24),
+                                              const TenantHistoryCard(),
                                             ],
                                           );
                                         },
@@ -139,7 +197,7 @@ class TenantDashPage extends StatelessWidget {
               Positioned(
                 right: 32,
                 bottom: 32,
-                child: _FloatingChatButton(onTap: () {}),
+                child: _FloatingChatButton(onTap: _openMaintenanceSheet),
               ),
             ],
           ),
@@ -222,18 +280,19 @@ class _DashboardHeader extends StatelessWidget {
           children: [
             Text(
               'Halo, $displayName',
-              style: const TextStyle(
-                fontSize: 30,
+              style: TextStyle(
+                fontFamily: 'Manrope',
+                fontSize: 30 * _fontScale(context),
                 fontWeight: FontWeight.w800,
                 color: TenantColors.onBackground,
-                fontFamily: 'Serif',
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Selamat datang kembali di dashboard hunian Anda.',
               style: TextStyle(
-                fontSize: 15,
+                fontFamily: 'Inter',
+                fontSize: 15 * _fontScale(context),
                 color: TenantColors.onSurfaceVariant,
               ),
             ),
@@ -253,6 +312,7 @@ class _DashboardHeader extends StatelessWidget {
                   Text(
                     '20 Oktober 2023',
                     style: TextStyle(
+                      fontFamily: 'Manrope',
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: TenantColors.primary,
@@ -475,159 +535,10 @@ class _RoomCard extends StatelessWidget {
   }
 }
 
-class _BillingCard extends StatelessWidget {
-  const _BillingCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-                  Text(
-                'Tagihan Bulan Ini',
-                style: TextStyle(
-                  fontFamily: 'Manrope',
-                  fontSize: 18 * _fontScale(context),
-                  fontWeight: FontWeight.w800,
-                  color: TenantColors.onBackground,
-                ),
-              ),
-              Icon(Icons.receipt_long, color: TenantColors.primary),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-              color: TenantColors.tertiaryFixed.withOpacity(0.45),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: TenantColors.tertiaryFixed),
-            ),
-                  child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.warning_amber_rounded, color: Color(0xFF8A3E00)),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Peringatan Deadline',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 11 * _fontScale(context),
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.9,
-                          color: TenantColors.onTertiaryFixedVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Segera lakukan pembayaran sebelum tanggal 20 Oktober untuk menghindari denda.',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 12 * _fontScale(context),
-                          height: 1.5,
-                          color: TenantColors.onTertiaryFixedVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 22),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Bulan Berjalan',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.1,
-                      color: TenantColors.onSurfaceVariant,
-                    ),
-                  ),
-                  SizedBox(height: 6),
-                  Text(
-                    'Oktober 2023',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: TenantColors.onBackground,
-                    ),
-                  ),
-                ],
-              ),
-              _PillLabel(
-                label: 'Belum Bayar',
-                background: TenantColors.error,
-                textColor: TenantColors.onError,
-              ),
-            ],
-          ),
-          const SizedBox(height: 22),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.upload_file),
-              label: const Text('Upload Bukti Bayar'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: TenantColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                textStyle: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Center(
-            child: Text(
-              'Format: PNG, JPG, PDF (Max 5MB)',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.8,
-                        color: TenantColors.onSurfaceVariant,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _SupportCard extends StatelessWidget {
-  const _SupportCard();
+  final VoidCallback onPressed;
+
+  const _SupportCard({super.key, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -686,7 +597,7 @@ class _SupportCard extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           TextButton.icon(
-            onPressed: () {},
+            onPressed: onPressed,
             style: TextButton.styleFrom(
               foregroundColor: TenantColors.primary,
               padding: EdgeInsets.zero,
@@ -697,159 +608,6 @@ class _SupportCard extends StatelessWidget {
               'Ajukan Keluhan',
               style: TextStyle(fontWeight: FontWeight.w800),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HistoryCard extends StatelessWidget {
-  const _HistoryCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Riwayat Pembayaran',
-            style: TextStyle(
-              fontFamily: 'Manrope',
-              fontSize: 18 * _fontScale(context),
-              fontWeight: FontWeight.w800,
-              color: TenantColors.onBackground,
-            ),
-          ),
-          const SizedBox(height: 18),
-          _HistoryItem(
-            month: 'September 2023',
-            invoice: 'INV/202309/012',
-            amount: 'Rp 2.500.000',
-          ),
-          const SizedBox(height: 12),
-          _HistoryItem(
-            month: 'Agustus 2023',
-            invoice: 'INV/202308/045',
-            amount: 'Rp 2.500.000',
-          ),
-          const SizedBox(height: 18),
-          OutlinedButton(
-            onPressed: () {},
-            style: OutlinedButton.styleFrom(
-              foregroundColor: TenantColors.primary,
-              side: BorderSide(color: TenantColors.primary.withOpacity(0.2)),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              textStyle: const TextStyle(fontWeight: FontWeight.w800),
-            ),
-            child: const SizedBox(
-              width: double.infinity,
-              child: Center(child: Text('Lihat Semua Riwayat')),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HistoryItem extends StatelessWidget {
-  final String month;
-  final String invoice;
-  final String amount;
-
-  const _HistoryItem({
-    required this.month,
-    required this.invoice,
-    required this.amount,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: TenantColors.background.withOpacity(0.35),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withOpacity(0.04)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-              decoration: BoxDecoration(
-              color: TenantColors.primary.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.check_circle, color: TenantColors.primary, size: 22),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  month,
-                  style: TextStyle(
-                    fontFamily: 'Manrope',
-                    fontSize: 14 * _fontScale(context),
-                    fontWeight: FontWeight.w800,
-                    color: TenantColors.onBackground,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  invoice,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.8,
-                        color: TenantColors.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: const [
-              Text(
-                'Rp 2.500.000',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: TenantColors.onBackground,
-                ),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Terverifikasi',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.8,
-                  color: TenantColors.primary,
-                ),
-              ),
-            ],
           ),
         ],
       ),
