@@ -49,6 +49,17 @@ class ApiService {
     }
   }
 
+  // PUT method
+  Future<Response> put(String path, {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) async {
+    try {
+      debugPrint("API PUT Request to: ${ConstantVariable.baseUrl}$path");
+      return await _dio.put(path, data: data, queryParameters: queryParameters, options: options);
+    } on DioException catch (e) {
+      _handleDioError(e, "PUT", path);
+      rethrow;
+    }
+  }
+
   void _handleDioError(DioException e, String method, String path) {
     debugPrint("DioException occurred during $method to $path!");
     debugPrint("Status Code: ${e.response?.statusCode}");

@@ -5,6 +5,8 @@ import '../data/datasources/properties_remote_data_source.dart';
 import '../data/repositories/properties_repository_impl.dart';
 import '../domain/repositories/properties_repository.dart';
 import '../domain/usecases/add_building_usecase.dart';
+import '../domain/usecases/get_buildings_usecase.dart';
+import '../domain/usecases/update_building_usecase.dart';
 import '../presentation/controllers/properties_controller.dart';
 
 class PropertiesBinding extends Bindings {
@@ -27,8 +29,20 @@ class PropertiesBinding extends Bindings {
       () => AddBuildingUseCase(Get.find<PropertiesRepository>()),
     );
 
+    Get.lazyPut<GetBuildingsUseCase>(
+      () => GetBuildingsUseCase(Get.find<PropertiesRepository>()),
+    );
+
+    Get.lazyPut<UpdateBuildingUseCase>(
+      () => UpdateBuildingUseCase(Get.find<PropertiesRepository>()),
+    );
+
     Get.lazyPut<PropertiesController>(
-      () => PropertiesController(addBuildingUseCase: Get.find<AddBuildingUseCase>()),
+      () => PropertiesController(
+        addBuildingUseCase: Get.find<AddBuildingUseCase>(),
+        getBuildingsUseCase: Get.find<GetBuildingsUseCase>(),
+        updateBuildingUseCase: Get.find<UpdateBuildingUseCase>(),
+      ),
     );
   }
 }

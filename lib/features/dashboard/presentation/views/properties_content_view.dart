@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/constants/colors.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/controllers/properties_controller.dart';
-
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/domain/entities/building.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/bindings/properties_binding.dart';
 
 class PropertiesContentView extends StatelessWidget {
@@ -118,11 +119,14 @@ class PropertiesContentView extends StatelessWidget {
   // METRICS BUILDER
   // ==========================================
   List<Widget> _getMetricCards(BuildContext context, PropertiesController controller) {
+    final bool buildingsLoading = controller.isBuildingsLoading.value;
+    final bool generalLoading = controller.isLoading.value;
+
     return [
       _buildMetricCard(
         context,
         "Total Gedung",
-        "${controller.buildings.length}",
+        buildingsLoading ? "..." : "${controller.buildings.length}",
         Icons.apartment_outlined,
         const Color(0xFF0077B6),
         const Color(0xFFE0EFFF),
@@ -130,7 +134,7 @@ class PropertiesContentView extends StatelessWidget {
       _buildMetricCard(
         context,
         "Total Kamar",
-        "${controller.rooms.length * 6}",
+        generalLoading ? "..." : "${controller.rooms.length * 6}",
         Icons.door_back_door_outlined,
         const Color(0xFF0077B6),
         const Color(0xFFE0EFFF),
@@ -138,7 +142,7 @@ class PropertiesContentView extends StatelessWidget {
       _buildMetricCard(
         context,
         "Kamar Terisi",
-        "${controller.rooms.where((r) => r['isTerisi'] == true).length}",
+        generalLoading ? "..." : "${controller.rooms.where((r) => r['isTerisi'] == true).length}",
         Icons.check_circle_outline_rounded,
         const Color(0xFF0077B6),
         const Color(0xFFE0EFFF),
@@ -146,7 +150,7 @@ class PropertiesContentView extends StatelessWidget {
       _buildMetricCard(
         context,
         "Kamar Kosong",
-        "${controller.rooms.where((r) => r['isTerisi'] == false).length}",
+        generalLoading ? "..." : "${controller.rooms.where((r) => r['isTerisi'] == false).length}",
         Icons.hotel_outlined,
         const Color(0xFFD97706),
         const Color(0xFFFEF3C7),
@@ -306,26 +310,132 @@ class PropertiesContentView extends StatelessWidget {
           const SizedBox(height: 24),
 
           // Buildings Table wrapped in scroll view to never overflow on mobile
-          isMobile
-              ? SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      minWidth: 500,
+          Obx(() {
+            final bool isLoading = controller.isBuildingsLoading.value;
+            
+            return isMobile
+                ? SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minWidth: 500,
+                      ),
+                      child: isLoading ? _buildGedungShimmer() : _buildGedungTable(context, controller),
                     ),
-                    child: _buildGedungTable(controller),
-                  ),
-                )
-              : SizedBox(
-                  width: double.infinity,
-                  child: _buildGedungTable(controller),
-                ),
+                  )
+                : SizedBox(
+                    width: double.infinity,
+                    child: isLoading ? _buildGedungShimmer() : _buildGedungTable(context, controller),
+                  );
+          }),
         ],
       ),
     );
   }
 
-  Widget _buildGedungTable(PropertiesController controller) {
+  Widget _buildGedungShimmer() {
+    return Shimmer.fromColors(
+      baseColor: const Color(0xFFF1F5F9),
+      highlightColor: const Color(0xFFE2E8F0),
+      child: Table(
+        columnWidths: const {
+          0: FlexColumnWidth(1.0), // No
+          1: FlexColumnWidth(4.5), // Nama Gedung
+          2: FlexColumnWidth(3.0), // Jumlah Kamar
+          3: FlexColumnWidth(2.5), // Aksi
+        },
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        children: [
+          const TableRow(
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.5)),
+            ),
+            children: [
+              Padding(
+                padding: EdgeInsets.only(bottom: 12.0),
+                child: Text("NO", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+              ),
+              Padding(
+                padding: EdgeInsets.only(bottom: 12.0),
+                child: Text("NAMA GEDUNG", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+              ),
+              Padding(
+                padding: EdgeInsets.only(bottom: 12.0),
+                child: Text("JUMLAH KAMAR", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+              ),
+              Padding(
+                padding: EdgeInsets.only(bottom: 12.0),
+                child: Text("AKSI", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+              ),
+            ],
+          ),
+          ...List.generate(3, (index) {
+            return TableRow(
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1)),
+              ),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  child: Container(
+                    height: 14,
+                    width: 20,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  child: Container(
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 32.0),
+                  child: Container(
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    Container(
+                      height: 14,
+                      width: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      height: 14,
+                      width: 40,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGedungTable(BuildContext context, PropertiesController controller) {
     return Table(
       columnWidths: const {
         0: FlexColumnWidth(1.0), // No
@@ -361,18 +471,30 @@ class PropertiesContentView extends StatelessWidget {
         ),
         
         // Table Rows from controller data
-        ...controller.buildings.map((building) {
+        ...controller.buildings.asMap().entries.map((entry) {
+          final index = entry.key + 1;
+          final building = entry.value;
+          
+          final nameLower = building.buildingName.toLowerCase();
+          final count = controller.rooms.where((room) {
+            final roomGedung = (room['gedung'] ?? '').toString().toLowerCase();
+            return roomGedung.isNotEmpty && nameLower.contains(roomGedung);
+          }).length;
+          final roomsCountStr = "$count Kamar";
+
           return _buildGedungRow(
-            building['no'] ?? '',
-            building['name'] ?? '',
-            building['roomsCount'] ?? '',
+            context,
+            controller,
+            index.toString(),
+            building,
+            roomsCountStr,
           );
         }).toList(),
       ],
     );
   }
 
-  TableRow _buildGedungRow(String no, String name, String roomsCount) {
+  TableRow _buildGedungRow(BuildContext context, PropertiesController controller, String no, Building building, String roomsCount) {
     return TableRow(
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1)),
@@ -382,12 +504,12 @@ class PropertiesContentView extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 16.0),
           child: Text(no, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF64748B))),
         ),
-        Text(name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+        Text(building.buildingName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
         Text(roomsCount, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
         Row(
           children: [
             TextButton(
-              onPressed: () {},
+              onPressed: () => _showEditBuildingModal(context, controller, building),
               style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(40, 30)),
               child: const Text("Edit", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0077B6))),
             ),
@@ -669,6 +791,16 @@ class PropertiesContentView extends StatelessWidget {
       barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (context) {
         return _AddBuildingDialog(controller: controller);
+      },
+    );
+  }
+
+  void _showEditBuildingModal(BuildContext context, PropertiesController controller, Building building) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (context) {
+        return _EditBuildingDialog(controller: controller, building: building);
       },
     );
   }
@@ -1120,6 +1252,250 @@ class _AddRoomDialogState extends State<_AddRoomDialog> {
                     "Simpan",
                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  ),
+                  child: const Text(
+                    "Batal",
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF005D90)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EditBuildingDialog extends StatefulWidget {
+  final PropertiesController controller;
+  final Building building;
+  const _EditBuildingDialog({required this.controller, required this.building});
+
+  @override
+  State<_EditBuildingDialog> createState() => _EditBuildingDialogState();
+}
+
+class _EditBuildingDialogState extends State<_EditBuildingDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _codeController;
+  late final TextEditingController _nameController;
+  late final TextEditingController _addressController;
+  late final TextEditingController _descController;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _codeController = TextEditingController(text: widget.building.buildingCode);
+    _nameController = TextEditingController(text: widget.building.buildingName);
+    _addressController = TextEditingController(text: widget.building.buildingAddress);
+    _descController = TextEditingController(text: widget.building.description);
+  }
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    _nameController.dispose();
+    _addressController.dispose();
+    _descController.dispose();
+    super.dispose();
+  }
+
+  InputDecoration _buildInputDecoration(String hintText) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Color(0xFF005D90), width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.red, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 24,
+      backgroundColor: Colors.white,
+      child: Container(
+        width: 460,
+        padding: const EdgeInsets.all(28),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Edit Gedung",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: ConstantColor.textPrimaryColor,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: ConstantColor.textSecondaryColor, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Kode Gedung Label
+              const Text(
+                "Kode Gedung",
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: ConstantColor.textPrimaryColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _codeController,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                decoration: _buildInputDecoration("Contoh: GDG-A"),
+                validator: (val) => (val == null || val.trim().isEmpty) ? "Kode gedung wajib diisi" : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Nama Gedung Label
+              const Text(
+                "Nama Gedung",
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: ConstantColor.textPrimaryColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _nameController,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                decoration: _buildInputDecoration("Contoh: Gedung A"),
+                validator: (val) => (val == null || val.trim().isEmpty) ? "Nama gedung wajib diisi" : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Alamat Gedung Label
+              const Text(
+                "Alamat Gedung",
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: ConstantColor.textPrimaryColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _addressController,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                decoration: _buildInputDecoration("Contoh: Jl. Contoh No. 1, Surabaya"),
+                validator: (val) => (val == null || val.trim().isEmpty) ? "Alamat gedung wajib diisi" : null,
+              ),
+              const SizedBox(height: 16),
+
+              // Deskripsi Label
+              const Text(
+                "Deskripsi",
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: ConstantColor.textPrimaryColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _descController,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                maxLines: 2,
+                decoration: _buildInputDecoration("Contoh: Gedung utama lantai 3"),
+              ),
+              const SizedBox(height: 28),
+
+              // Action Buttons
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : () async {
+                    if (_formKey.currentState!.validate()) {
+                      setState(() {
+                        _isLoading = true;
+                      });
+                      final success = await widget.controller.updateBuilding(
+                        id: widget.building.id,
+                        code: _codeController.text.trim(),
+                        name: _nameController.text.trim(),
+                        address: _addressController.text.trim(),
+                        description: _descController.text.trim(),
+                      );
+                      setState(() {
+                        _isLoading = false;
+                      });
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(success ? "Gedung berhasil diperbarui!" : "Gedung berhasil diperbarui secara lokal!"),
+                            backgroundColor: ConstantColor.primaryColor,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF005D90),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    elevation: 0,
+                  ),
+                  child: _isLoading 
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : const Text(
+                        "Simpan",
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
                 ),
               ),
               const SizedBox(height: 12),

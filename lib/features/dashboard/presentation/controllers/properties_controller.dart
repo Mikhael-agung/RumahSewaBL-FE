@@ -1,16 +1,26 @@
 import 'package:get/get.dart';
+import '../../domain/entities/building.dart';
 import '../../domain/usecases/add_building_usecase.dart';
+import '../../domain/usecases/get_buildings_usecase.dart';
+import '../../domain/usecases/update_building_usecase.dart';
 
 class PropertiesController extends GetxController {
   final AddBuildingUseCase? addBuildingUseCase;
+  final GetBuildingsUseCase? getBuildingsUseCase;
+  final UpdateBuildingUseCase? updateBuildingUseCase;
 
-  PropertiesController({this.addBuildingUseCase});
+  PropertiesController({
+    this.addBuildingUseCase,
+    this.getBuildingsUseCase,
+    this.updateBuildingUseCase,
+  });
 
   // Loading state
   var isLoading = true.obs;
+  var isBuildingsLoading = true.obs;
 
-  // Mock data for Buildings
-  var buildings = <Map<String, String>>[].obs;
+  // Real entity list for Buildings
+  var buildings = <Building>[].obs;
 
   // Mock data for Rooms
   var rooms = <Map<String, dynamic>>[].obs;
@@ -24,28 +34,45 @@ class PropertiesController extends GetxController {
   Future<void> fetchPropertiesData() async {
     try {
       isLoading.value = true;
-      // Simulate network call loading delay (1.5 seconds)
-      await Future.delayed(const Duration(milliseconds: 1500));
+      isBuildingsLoading.value = true;
 
-      // Populate mock data
-      buildings.value = [
-        {"no": "1", "name": "Gedung Biru Laut Utama", "roomsCount": "12 Kamar"},
-        {"no": "2", "name": "Gedung Biru Laut Timur", "roomsCount": "10 Kamar"},
-        {"no": "3", "name": "Gedung Biru Laut Barat", "roomsCount": "8 Kamar"},
-      ];
-
-      rooms.value = [
-        {"kode": "A-101", "gedung": "Utama", "harga": "Rp 2.500.000", "isTerisi": true},
-        {"kode": "A-102", "gedung": "Utama", "harga": "Rp 2.000.000", "isTerisi": false},
-        {"kode": "B-101", "gedung": "Timur", "harga": "Rp 2.500.000", "isTerisi": true},
-        {"kode": "B-102", "gedung": "Timur", "harga": "Rp 2.000.000", "isTerisi": false},
-        {"kode": "C-101", "gedung": "Barat", "harga": "Rp 2.500.000", "isTerisi": true},
-      ];
+      await Future.wait([
+        fetchBuildings(),
+        fetchRooms(),
+      ]);
     } catch (e) {
       // Handle error if any
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<void> fetchBuildings() async {
+    try {
+      isBuildingsLoading.value = true;
+      // Add a small artificial delay of 1.5s to display the premium shimmer properly
+      await Future.delayed(const Duration(milliseconds: 1500));
+      if (getBuildingsUseCase != null) {
+        final result = await getBuildingsUseCase!.execute();
+        buildings.assignAll(result);
+      }
+    } catch (e) {
+      // Fallback is handled inside the repository/datasource, but we catch here to be safe
+    } finally {
+      isBuildingsLoading.value = false;
+    }
+  }
+
+  Future<void> fetchRooms() async {
+    // Simulate network call loading delay (1.0 seconds)
+    await Future.delayed(const Duration(milliseconds: 1000));
+    rooms.value = [
+      {"kode": "A-101", "gedung": "Utama", "harga": "Rp 2.500.000", "isTerisi": true},
+      {"kode": "A-102", "gedung": "Utama", "harga": "Rp 2.000.000", "isTerisi": false},
+      {"kode": "B-101", "gedung": "Timur", "harga": "Rp 2.500.000", "isTerisi": true},
+      {"kode": "B-102", "gedung": "Timur", "harga": "Rp 2.000.000", "isTerisi": false},
+      {"kode": "C-101", "gedung": "Barat", "harga": "Rp 2.500.000", "isTerisi": true},
+    ];
   }
 
   void addRoom({required String kode, required String gedung, required String harga}) {
@@ -65,7 +92,54 @@ class PropertiesController extends GetxController {
   }) async {
     try {
       if (addBuildingUseCase != null) {
-        await addBuildingUseCase!.execute(
+        final result = await addBuildingUseCase!.execute(
+          code: code,
+          name: name,
+          address: address,
+          description: description,
+        );
+        buildings.add(result);
+      } else {
+        // Fallback for direct testing
+        await Future.delayed(const Duration(milliseconds: 500));
+        final newBuilding = Building(
+          id: buildings.isEmpty ? 1 : (buildings.map((b) => b.id).reduce((a, b) => a > b ? a : b) + 1),
+          buildingCode: code,
+          buildingName: name,
+          buildingAddress: address,
+          description: description,
+        );
+        buildings.add(newBuilding);
+      }
+      return true;
+    } catch (e) {
+      print("Error calling AddBuildingUseCase: $e");
+      
+      // Fallback/offline demo update
+      final newBuilding = Building(
+        id: buildings.isEmpty ? 1 : (buildings.map((b) => b.id).reduce((a, b) => a > b ? a : b) + 1),
+        buildingCode: code,
+        buildingName: name,
+        buildingAddress: address,
+        description: description,
+      );
+      buildings.add(newBuilding);
+      return true;
+    }
+  }
+
+  Future<bool> updateBuilding({
+    required int id,
+    required String code,
+    required String name,
+    required String address,
+    required String description,
+  }) async {
+    try {
+      Building updated;
+      if (updateBuildingUseCase != null) {
+        updated = await updateBuildingUseCase!.execute(
+          id: id,
           code: code,
           name: name,
           address: address,
@@ -74,23 +148,35 @@ class PropertiesController extends GetxController {
       } else {
         // Fallback for direct testing
         await Future.delayed(const Duration(milliseconds: 500));
+        updated = Building(
+          id: id,
+          buildingCode: code,
+          buildingName: name,
+          buildingAddress: address,
+          description: description,
+        );
       }
 
-      buildings.add({
-        "no": "${buildings.length + 1}",
-        "name": name,
-        "roomsCount": "0 Kamar",
-      });
+      final idx = buildings.indexWhere((b) => b.id == id);
+      if (idx != -1) {
+        buildings[idx] = updated;
+      }
       return true;
     } catch (e) {
-      print("Error calling AddBuildingUseCase: $e");
+      print("Error calling UpdateBuildingUseCase: $e");
       
       // Fallback/offline demo update
-      buildings.add({
-        "no": "${buildings.length + 1}",
-        "name": name,
-        "roomsCount": "0 Kamar",
-      });
+      final updated = Building(
+        id: id,
+        buildingCode: code,
+        buildingName: name,
+        buildingAddress: address,
+        description: description,
+      );
+      final idx = buildings.indexWhere((b) => b.id == id);
+      if (idx != -1) {
+        buildings[idx] = updated;
+      }
       return true;
     }
   }

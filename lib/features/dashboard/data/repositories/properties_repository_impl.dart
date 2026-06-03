@@ -8,6 +8,11 @@ class PropertiesRepositoryImpl implements PropertiesRepository {
   PropertiesRepositoryImpl({required this.remoteDataSource});
 
   @override
+  Future<List<Building>> getBuildings() async {
+    return await remoteDataSource.getBuildings();
+  }
+
+  @override
   Future<Building> addBuilding({
     required String code,
     required String name,
@@ -15,6 +20,23 @@ class PropertiesRepositoryImpl implements PropertiesRepository {
     required String description,
   }) async {
     return await remoteDataSource.addBuilding(
+      code: code,
+      name: name,
+      address: address,
+      description: description,
+    );
+  }
+
+  @override
+  Future<Building> updateBuilding({
+    required int id,
+    required String code,
+    required String name,
+    required String address,
+    required String description,
+  }) async {
+    return await remoteDataSource.updateBuilding(
+      id: id,
       code: code,
       name: name,
       address: address,
