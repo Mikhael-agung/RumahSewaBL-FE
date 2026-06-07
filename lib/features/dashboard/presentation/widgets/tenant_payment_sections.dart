@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/constants/tenant_colors.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/constants/variables.dart';
+import 'package:rumah_sewa_biru_laut_fe/core/routes/route_name.dart';
 
 const Color _surfaceBackground = Colors.white;
 const int _monthlyRent = 2500000;
@@ -24,7 +26,9 @@ BoxDecoration _surfaceDecoration({required double radius}) {
 }
 
 class TenantBillingCard extends StatelessWidget {
-  const TenantBillingCard({super.key});
+  final VoidCallback? onUploaded;
+
+  const TenantBillingCard({super.key, this.onUploaded});
 
   static const List<String> _monthOptions = [
     'Januari',
@@ -42,7 +46,8 @@ class TenantBillingCard extends StatelessWidget {
   ];
 
   Future<void> _uploadPaymentProof(BuildContext context) async {
-    final monthController = TextEditingController(text: _monthOptions[DateTime.now().month - 1]);
+    String selectedMonth = _monthOptions[DateTime.now().month - 1];
+    final monthController = TextEditingController(text: selectedMonth);
     final yearController = TextEditingController(text: DateTime.now().year.toString());
     final amountController = TextEditingController(text: _monthlyRent.toString());
     final noteController = TextEditingController();
@@ -85,7 +90,7 @@ class TenantBillingCard extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
-                                      '${monthController.text.trim()} ${yearController.text.trim()} — ${formatCurrency(amountController.text.trim())}',
+                                      '$selectedMonth ${yearController.text.trim()} — ${formatCurrency(amountController.text.trim())}',
                                       style: const TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
@@ -127,7 +132,13 @@ class TenantBillingCard extends StatelessWidget {
                                   items: _monthOptions,
                                   label: 'Bulan pembayaran',
                                   onChanged: (value) {
-                                    monthController.text = value ?? monthController.text;
+                                    if (value == null || value == selectedMonth) {
+                                      return;
+                                    }
+                                    setState(() {
+                                      selectedMonth = value;
+                                      monthController.text = value;
+                                    });
                                   },
                                 ),
                               ),
@@ -218,7 +229,7 @@ class TenantBillingCard extends StatelessWidget {
         return;
       }
 
-      final paymentMonth = _monthOptions.indexOf(monthController.text.trim()) + 1;
+      final paymentMonth = _monthOptions.indexOf(selectedMonth.trim()) + 1;
       final paymentYear = int.tryParse(yearController.text.trim());
       final amount = num.tryParse(amountController.text.trim());
 
@@ -265,6 +276,7 @@ class TenantBillingCard extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Bukti pembayaran berhasil diupload')),
         );
+        onUploaded?.call();
       }
     } on DioException catch (e) {
       final message = _resolveDioMessage(e);
@@ -555,8 +567,9 @@ class _TenantPaymentsHistoryTableCardState extends State<TenantPaymentsHistoryTa
                     child: Row(
                       children: const [
                         Expanded(flex: 4, child: _HistoryHeaderLabel(text: 'BULAN')),
+                        Expanded(flex: 4, child: _HistoryHeaderLabel(text: 'INVOICE')),
                         Expanded(flex: 3, child: _HistoryHeaderLabel(text: 'TANGGAL')),
-                        Expanded(flex: 2, child: _HistoryHeaderLabel(text: 'STATUS')),
+                        Expanded(flex: 3, child: _HistoryHeaderLabel(text: 'STATUS')),
                         SizedBox(width: 56, child: _HistoryHeaderLabel(text: 'AKSI')),
                       ],
                     ),
@@ -731,7 +744,7 @@ class _TenantHistoryCardState extends State<TenantHistoryCard> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton(
-                      onPressed: () {},
+                      onPressed: () => context.go(RouteName.tenantPaymentsPage),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: TenantColors.primary,
                         side: BorderSide(color: TenantColors.primary.withOpacity(0.20)),
@@ -786,11 +799,17 @@ class HistoryItemData {
     final monthNumber = _parseMonthNumber(rawMonth);
     final year = int.tryParse(rawYear) ?? _extractYear(createdAt);
     final invoice = asString(
-      map['invoice'] ?? map['invoice_number'] ?? map['invoice_no'] ?? map['reference'] ?? map['code'],
+      map['invoice'] ??
+          map['invoice_number'] ??
+          map['invoice_no'] ??
+          map['payment__code'] ??
+          map['payment_code'] ??
+          map['reference'] ??
+          map['code'],
     );
     final amountValue = map['amount'] ?? map['total_amount'] ?? map['nominal'] ?? map['price'];
     final status = asString(
-      map['status'] ?? map['payment_status'] ?? map['verification_status'] ?? map['state'],
+      map['payment_status'] ?? map['status'] ?? map['verification_status'] ?? map['state'],
     );
 
     return HistoryItemData(
@@ -800,7 +819,7 @@ class HistoryItemData {
       year: year,
       invoice: invoice.isEmpty ? '-' : invoice,
       amount: formatCurrency(amountValue),
-      status: status.isEmpty ? 'Terverifikasi' : normalizeStatus(status),
+      status: status.isEmpty ? 'Menunggu Verifikasi' : normalizeStatus(status),
     );
   }
 }
@@ -1262,14 +1281,18 @@ class _HistoryTableRow extends StatelessWidget {
           Expanded(
             flex: 3,
             child: Text(
+              item.invoice,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: TenantColors.onSurfaceVariant),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
               item.dateLabel,
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: TenantColors.onSurfaceVariant),
             ),
           ),
-          Expanded(
-            flex: 2,
-            child: _StatusChip(label: statusLabel, status: item.status),
-          ),
+          Expanded(flex: 3, child: _StatusChip(label: statusLabel, status: item.status)),
           SizedBox(
             width: 56,
             child: IconButton(
@@ -1576,11 +1599,14 @@ String formatMonthLabel(String value, {int? year, int? monthNumber}) {
 
 String normalizeStatus(String value) {
   final normalized = value.trim().toLowerCase();
-  if (normalized.contains('verif') || normalized.contains('success') || normalized.contains('paid')) {
-    return 'Terverifikasi';
+  if (normalized.contains('menunggu_verifikasi') || normalized.contains('waiting_verification')) {
+    return 'Menunggu Verifikasi';
   }
   if (normalized.contains('pending') || normalized.contains('proses') || normalized.contains('waiting')) {
     return 'Menunggu';
+  }
+  if (normalized.contains('verif') || normalized.contains('success') || normalized.contains('paid')) {
+    return 'Terverifikasi';
   }
   if (normalized.contains('fail') || normalized.contains('reject') || normalized.contains('gagal')) {
     return 'Gagal';
@@ -1593,7 +1619,7 @@ Color statusColor(String status) {
   if (normalized == 'terverifikasi') {
     return TenantColors.primary;
   }
-  if (normalized == 'menunggu') {
+  if (normalized == 'menunggu' || normalized == 'menunggu verifikasi') {
     return const Color(0xFF8A3E00);
   }
   if (normalized == 'gagal') {

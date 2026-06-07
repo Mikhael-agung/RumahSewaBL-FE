@@ -22,9 +22,17 @@ class TenantDashPage extends StatefulWidget {
 }
 
 class _TenantDashPageState extends State<TenantDashPage> {
+  int _historyRefreshToken = 0;
+
   Future<String> _getUsername() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('user_username') ?? 'User';
+  }
+
+  void _refreshHistory() {
+    setState(() {
+      _historyRefreshToken++;
+    });
   }
 
   Future<void> _openMaintenanceSheet() async {
@@ -76,127 +84,209 @@ class _TenantDashPageState extends State<TenantDashPage> {
         final username = snapshot.data ?? 'User';
         final displayName = username == 'User' ? 'Budi Santoso' : username;
 
-        return Scaffold(
-          backgroundColor: TenantColors.background,
-          body: Stack(
-            children: [
-              Row(
-                children: [
-                  TenantSidebar(
-                    activeLabel: 'Dashboard',
-                    onDashboardTap: () => context.go(RouteName.tenantDashPage),
-                    onPaymentsTap: () => context.go(RouteName.tenantPaymentsPage),
-                    onMaintenanceTap: _openMaintenanceSheet,
-                  ),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        TenantTopBar(displayName: displayName),
-                        Expanded(
-                          child: SingleChildScrollView(
-                            child: Padding(
-                              padding: const EdgeInsets.all(32),
-                              child: Center(
-                                child: ConstrainedBox(
-                                  constraints: const BoxConstraints(maxWidth: 1280),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      _DashboardHeader(displayName: displayName),
-                                      const SizedBox(height: 24),
-                                      LayoutBuilder(
-                                        builder: (context, constraints) {
-                                          final isWide = constraints.maxWidth >= 1100;
+        final isNarrowScreen = MediaQuery.of(context).size.width < 900;
+        final scaffoldKey = GlobalKey<ScaffoldState>();
 
-                                          if (isWide) {
-                                            return Row(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Expanded(
-                                                  flex: 8,
-                                                  child: _RoomCard(),
-                                                ),
-                                                const SizedBox(width: 24),
-                                                Expanded(
-                                                  flex: 4,
-                                                  child: TenantBillingCard(),
-                                                ),
-                                              ],
-                                            );
-                                          }
+        if (!isNarrowScreen) {
+          return Scaffold(
+            backgroundColor: TenantColors.background,
+            body: Stack(
+              children: [
+                Row(
+                  children: [
+                    TenantSidebar(
+                      activeLabel: 'Dashboard',
+                      onDashboardTap: () => context.go(RouteName.tenantDashPage),
+                      onPaymentsTap: () => context.go(RouteName.tenantPaymentsPage),
+                      onMaintenanceTap: _openMaintenanceSheet,
+                    ),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          TenantTopBar(displayName: displayName),
+                          Expanded(
+                            child: SingleChildScrollView(
+                              child: Padding(
+                                padding: const EdgeInsets.all(32),
+                                child: Center(
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(maxWidth: 1280),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        _DashboardHeader(displayName: displayName),
+                                        const SizedBox(height: 24),
+                                        LayoutBuilder(
+                                          builder: (context, constraints) {
+                                            final isWide = constraints.maxWidth >= 1100;
 
-                                          return Column(
-                                            children: [
-                                              const _RoomCard(),
-                                              const SizedBox(height: 24),
-                                              const TenantBillingCard(),
-                                            ],
-                                          );
-                                        },
-                                      ),
-                                      const SizedBox(height: 24),
-                                      LayoutBuilder(
-                                        builder: (context, constraints) {
-                                          final isWide = constraints.maxWidth >= 900;
-
-                                          if (isWide) {
-                                            return Row(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Expanded(
-                                                  flex: 4,
-                                                  child: _SupportCard(
-                                                    onPressed: _openMaintenanceSheet,
+                                            if (isWide) {
+                                              return Row(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Expanded(
+                                                    flex: 8,
+                                                    child: _RoomCard(),
                                                   ),
-                                                ),
-                                                const SizedBox(width: 24),
-                                                const Expanded(
-                                                  flex: 8,
-                                                  child: TenantHistoryCard(),
-                                                ),
+                                                  const SizedBox(width: 24),
+                                                  Expanded(
+                                                    flex: 4,
+                                                    child: TenantBillingCard(onUploaded: _refreshHistory),
+                                                  ),
+                                                ],
+                                              );
+                                            }
+
+                                            return Column(
+                                              children: [
+                                                const _RoomCard(),
+                                                const SizedBox(height: 24),
+                                                TenantBillingCard(onUploaded: _refreshHistory),
                                               ],
                                             );
-                                          }
+                                          },
+                                        ),
+                                        const SizedBox(height: 24),
+                                        LayoutBuilder(
+                                          builder: (context, constraints) {
+                                            final isWide = constraints.maxWidth >= 900;
 
-                                          return Column(
-                                            children: [
-                                              _SupportCard(
-                                                onPressed: _openMaintenanceSheet,
-                                              ),
-                                              const SizedBox(height: 24),
-                                              const TenantHistoryCard(),
-                                            ],
-                                          );
-                                        },
-                                      ),
-                                      const SizedBox(height: 20),
-                                      Center(
-                                        child: Text(
-                                          '© 2023 Rumah Sewa Biru Laut. Coastal Precision.',
-                                          style: TextStyle(
-                                            fontFamily: 'Inter',
-                                            fontSize: 10 * _fontScale(context),
-                                            fontWeight: FontWeight.w700,
-                                            letterSpacing: 1.1,
-                                            color: TenantColors.onSurfaceVariant,
+                                            if (isWide) {
+                                              return Row(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Expanded(
+                                                    flex: 4,
+                                                    child: _SupportCard(
+                                                      onPressed: _openMaintenanceSheet,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 24),
+                                                  Expanded(
+                                                    flex: 8,
+                                                    child: TenantHistoryCard(key: ValueKey(_historyRefreshToken)),
+                                                  ),
+                                                ],
+                                              );
+                                            }
+
+                                            return Column(
+                                              children: [
+                                                _SupportCard(
+                                                  onPressed: _openMaintenanceSheet,
+                                                ),
+                                                const SizedBox(height: 24),
+                                                TenantHistoryCard(key: ValueKey(_historyRefreshToken)),
+                                              ],
+                                            );
+                                          },
+                                        ),
+                                        const SizedBox(height: 20),
+                                        Center(
+                                          child: Text(
+                                            '© 2023 Rumah Sewa Biru Laut. Coastal Precision.',
+                                            style: TextStyle(
+                                              fontFamily: 'Inter',
+                                              fontSize: 10 * _fontScale(context),
+                                              fontWeight: FontWeight.w700,
+                                              letterSpacing: 1.1,
+                                              color: TenantColors.onSurfaceVariant,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Positioned(
+                  right: 32,
+                  bottom: 32,
+                  child: _FloatingChatButton(onTap: _openMaintenanceSheet),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Scaffold(
+          key: scaffoldKey,
+          backgroundColor: TenantColors.background,
+          drawer: Drawer(
+            child: SafeArea(
+              child: TenantSidebar(
+                activeLabel: 'Dashboard',
+                onDashboardTap: () {
+                  Navigator.of(context).pop();
+                  context.go(RouteName.tenantDashPage);
+                },
+                onPaymentsTap: () {
+                  Navigator.of(context).pop();
+                  context.go(RouteName.tenantPaymentsPage);
+                },
+                onMaintenanceTap: () {
+                  Navigator.of(context).pop();
+                  _openMaintenanceSheet();
+                },
+              ),
+            ),
+          ),
+          body: Stack(
+            children: [
+              Column(
+                children: [
+                  TenantTopBar(displayName: displayName, onMenuTap: () => scaffoldKey.currentState?.openDrawer()),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 800),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _DashboardHeader(displayName: displayName),
+                                const SizedBox(height: 16),
+                                const _RoomCard(),
+                                const SizedBox(height: 16),
+                                TenantBillingCard(onUploaded: _refreshHistory),
+                                const SizedBox(height: 16),
+                                _SupportCard(onPressed: _openMaintenanceSheet),
+                                const SizedBox(height: 16),
+                                TenantHistoryCard(key: ValueKey(_historyRefreshToken)),
+                                const SizedBox(height: 20),
+                                Center(
+                                  child: Text(
+                                    '© 2023 Rumah Sewa Biru Laut. Coastal Precision.',
+                                    style: TextStyle(
+                                      fontFamily: 'Inter',
+                                      fontSize: 10 * _fontScale(context),
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 1.1,
+                                      color: TenantColors.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ],
               ),
               Positioned(
-                right: 32,
-                bottom: 32,
+                right: 16,
+                bottom: 16,
                 child: _FloatingChatButton(onTap: _openMaintenanceSheet),
               ),
             ],
