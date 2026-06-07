@@ -43,4 +43,9 @@ class PropertiesRepositoryImpl implements PropertiesRepository {
       description: description,
     );
   }
+
+  @override
+  Future<void> deleteBuilding(int id) async {
+    await remoteDataSource.deleteBuilding(id);
+  }
 }

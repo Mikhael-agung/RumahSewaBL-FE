@@ -40,6 +40,10 @@ class PropertiesContentView extends StatelessWidget {
         SizedBox(height: isMobile ? 24 : 32),
 
         Obx(() {
+          // Register GetX observers for list changes so that Metric Cards rebuild correctly
+          final _ = controller.buildings.length;
+          final _2 = controller.rooms.length;
+
           if (controller.isLoading.value) {
             return Container(
               height: 350,
@@ -515,7 +519,7 @@ class PropertiesContentView extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             TextButton(
-              onPressed: () {},
+              onPressed: () => _showDeleteBuildingConfirmation(context, controller, building),
               style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(40, 30)),
               child: const Text("Hapus", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.red)),
             ),
@@ -801,6 +805,16 @@ class PropertiesContentView extends StatelessWidget {
       barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (context) {
         return _EditBuildingDialog(controller: controller, building: building);
+      },
+    );
+  }
+
+  void _showDeleteBuildingConfirmation(BuildContext context, PropertiesController controller, Building building) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (context) {
+        return _DeleteBuildingConfirmationDialog(controller: controller, building: building);
       },
     );
   }
@@ -1516,6 +1530,131 @@ class _EditBuildingDialogState extends State<_EditBuildingDialog> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DeleteBuildingConfirmationDialog extends StatefulWidget {
+  final PropertiesController controller;
+  final Building building;
+  const _DeleteBuildingConfirmationDialog({required this.controller, required this.building});
+
+  @override
+  State<_DeleteBuildingConfirmationDialog> createState() => _DeleteBuildingConfirmationDialogState();
+}
+
+class _DeleteBuildingConfirmationDialogState extends State<_DeleteBuildingConfirmationDialog> {
+  bool _isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 24,
+      backgroundColor: Colors.white,
+      child: Container(
+        width: 400,
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Warning Icon
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFEE2E2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.red,
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Title
+            const Text(
+              "Hapus Gedung?",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: ConstantColor.textPrimaryColor,
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Description
+            Text(
+              "Apakah Anda yakin ingin menghapus gedung \"${widget.building.buildingName}\"? Tindakan ini tidak dapat dibatalkan.",
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                color: ConstantColor.textSecondaryColor,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // Action Buttons
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : () async {
+                  setState(() {
+                    _isLoading = true;
+                  });
+                  final success = await widget.controller.deleteBuilding(widget.building.id);
+                  setState(() {
+                    _isLoading = false;
+                  });
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(success ? "Gedung berhasil dihapus!" : "Gedung gagal dihapus!"),
+                        backgroundColor: success ? Colors.green : Colors.red,
+                      ),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  elevation: 0,
+                ),
+                child: _isLoading 
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    )
+                  : const Text(
+                      "Hapus",
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton(
+                onPressed: () => Navigator.pop(context),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                ),
+                child: const Text(
+                  "Batal",
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

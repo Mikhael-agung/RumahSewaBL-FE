@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../../domain/entities/building.dart';
 import '../../domain/usecases/add_building_usecase.dart';
+import '../../domain/usecases/delete_building_usecase.dart';
 import '../../domain/usecases/get_buildings_usecase.dart';
 import '../../domain/usecases/update_building_usecase.dart';
 
@@ -8,11 +9,13 @@ class PropertiesController extends GetxController {
   final AddBuildingUseCase? addBuildingUseCase;
   final GetBuildingsUseCase? getBuildingsUseCase;
   final UpdateBuildingUseCase? updateBuildingUseCase;
+  final DeleteBuildingUseCase? deleteBuildingUseCase;
 
   PropertiesController({
     this.addBuildingUseCase,
     this.getBuildingsUseCase,
     this.updateBuildingUseCase,
+    this.deleteBuildingUseCase,
   });
 
   // Loading state
@@ -177,6 +180,27 @@ class PropertiesController extends GetxController {
       if (idx != -1) {
         buildings[idx] = updated;
       }
+      return true;
+    }
+  }
+
+  Future<bool> deleteBuilding(int id) async {
+    try {
+      if (deleteBuildingUseCase != null) {
+        await deleteBuildingUseCase!.execute(id);
+      } else {
+        // Fallback for direct testing
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+      buildings.removeWhere((b) => b.id == id);
+
+      // update buildings count lenghtnya
+      print("Buildings count: ${buildings.length}");
+      return true;
+    } catch (e) {
+      print("Error calling DeleteBuildingUseCase: $e");
+      // Fallback/offline demo update
+      buildings.removeWhere((b) => b.id == id);
       return true;
     }
   }

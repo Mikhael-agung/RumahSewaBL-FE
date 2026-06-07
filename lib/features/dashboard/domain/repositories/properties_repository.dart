@@ -15,4 +15,5 @@ abstract class PropertiesRepository {
     required String address,
     required String description,
   });
+  Future<void> deleteBuilding(int id);
 }

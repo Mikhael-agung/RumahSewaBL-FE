@@ -60,6 +60,17 @@ class ApiService {
     }
   }
 
+  // DELETE method
+  Future<Response> delete(String path, {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) async {
+    try {
+      debugPrint("API DELETE Request to: ${ConstantVariable.baseUrl}$path");
+      return await _dio.delete(path, data: data, queryParameters: queryParameters, options: options);
+    } on DioException catch (e) {
+      _handleDioError(e, "DELETE", path);
+      rethrow;
+    }
+  }
+
   void _handleDioError(DioException e, String method, String path) {
     debugPrint("DioException occurred during $method to $path!");
     debugPrint("Status Code: ${e.response?.statusCode}");
