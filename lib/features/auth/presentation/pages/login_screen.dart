@@ -19,9 +19,7 @@ class LoginScreen extends StatelessWidget {
             bool isWeb = constraints.maxWidth > 600;
             return SingleChildScrollView(
               child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
                   child: Column(
                     children: [
@@ -42,7 +40,11 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMainContent(bool isWeb, LoginController controller, BuildContext context) {
+  Widget _buildMainContent(
+    bool isWeb,
+    LoginController controller,
+    BuildContext context,
+  ) {
     double w(double value) => isWeb ? value : value.w;
     double h(double value) => isWeb ? value : value.h;
     double sp(double value) => isWeb ? value : value.sp;
@@ -112,7 +114,9 @@ class LoginScreen extends StatelessWidget {
 
           // Card Container
           ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 450), // Max width for web
+            constraints: const BoxConstraints(
+              maxWidth: 450,
+            ), // Max width for web
             child: Container(
               padding: EdgeInsets.all(w(32)),
               decoration: BoxDecoration(
@@ -143,20 +147,30 @@ class LoginScreen extends StatelessWidget {
                     controller: controller.usernameController,
                     decoration: InputDecoration(
                       hintText: "Enter your username",
-                      hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: sp(14)),
-                      prefixIcon: Icon(Icons.person_outline_rounded, color: Colors.grey.shade400, size: w(20)),
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: sp(14),
+                      ),
+                      prefixIcon: Icon(
+                        Icons.person,
+                        color: Colors.grey.shade400,
+                        size: w(20),
+                      ),
                       filled: true,
-                      fillColor: ConstantColor.backgroundColor, 
+                      fillColor: ConstantColor.backgroundColor,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(r(12)),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: EdgeInsets.symmetric(vertical: h(16), horizontal: w(16)),
+                      contentPadding: EdgeInsets.symmetric(
+                        vertical: h(16),
+                        horizontal: w(16),
+                      ),
                     ),
                     style: TextStyle(fontSize: sp(14)),
                   ),
                   SizedBox(height: h(20)),
-                  
+
                   // Password Label & Field
                   Text(
                     "Password",
@@ -168,45 +182,66 @@ class LoginScreen extends StatelessWidget {
                   ),
                   SizedBox(height: h(8)),
                   Obx(() => TextField(
-                    controller: controller.passwordController,
-                    obscureText: controller.obscureText.value,
-                    decoration: InputDecoration(
-                      hintText: "Enter your password",
-                      hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: sp(14)),
-                      prefixIcon: Icon(Icons.lock_outline_rounded, color: Colors.grey.shade400, size: w(20)),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          controller.obscureText.value ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                      controller: controller.passwordController,
+                      obscureText: controller.obscureText.value,
+                      textInputAction: TextInputAction.done,
+                      onEditingComplete: () async {
+                        if (!controller.isLoading.value) {
+                          await controller.login(context);
+                        }
+                      },
+                      decoration: InputDecoration(
+                        hintText: "Enter your password",
+                        hintStyle: TextStyle(
+                          color: Colors.grey.shade400,
+                          fontSize: sp(14),
+                        ),
+                        prefixIcon: Icon(
+                          Icons.lock,
                           color: Colors.grey.shade400,
                           size: w(20),
                         ),
-                        onPressed: () => controller.toggleObscureText(),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            controller.obscureText.value
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Colors.grey.shade400,
+                            size: w(20),
+                          ),
+                          onPressed: () => controller.toggleObscureText(),
+                        ),
+                        filled: true,
+                        fillColor: ConstantColor.backgroundColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(r(12)),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: EdgeInsets.symmetric(
+                          vertical: h(16),
+                          horizontal: w(16),
+                        ),
                       ),
-                      filled: true,
-                      fillColor: ConstantColor.backgroundColor,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(r(12)),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: EdgeInsets.symmetric(vertical: h(16), horizontal: w(16)),
+                      style: TextStyle(fontSize: sp(14)),
                     ),
-                    style: TextStyle(fontSize: sp(14)),
-                  )),
+                  ),
                   SizedBox(height: h(16)),
-                  
+
                   // Remember Me & Forgot Password
                   Row(
                     children: [
                       SizedBox(
                         width: w(24),
                         height: w(24),
-                        child: Obx(() => Checkbox(
-                          value: controller.rememberMe.value,
-                          activeColor: ConstantColor.buttonColor,
-                          shape: const CircleBorder(),
-                          side: BorderSide(color: Colors.grey.shade300),
-                          onChanged: controller.toggleRememberMe,
-                        )),
+                        child: Obx(
+                          () => Checkbox(
+                            value: controller.rememberMe.value,
+                            activeColor: ConstantColor.buttonColor,
+                            shape: const CircleBorder(),
+                            side: BorderSide(color: Colors.grey.shade400),
+                            onChanged: controller.toggleRememberMe,
+                          ),
+                        ),
                       ),
                       SizedBox(width: w(8)),
                       Text(
@@ -229,83 +264,87 @@ class LoginScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: sp(14),
                             fontWeight: FontWeight.w600,
-                            color: ConstantColor.linkColor, 
+                            color: ConstantColor.textPrimaryColor,
                           ),
                         ),
                       ),
                     ],
                   ),
                   SizedBox(height: h(24)),
-                  
+
                   // Login Button
                   SizedBox(
                     width: double.infinity,
-                    height: h(54),
-                    child: Obx(() => ElevatedButton(
-                      onPressed: controller.isLoading.value 
-                          ? null 
-                          : () async {
-                              await controller.login(context);
-                            },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: ConstantColor.buttonColor,
-                        disabledBackgroundColor: ConstantColor.buttonColor.withValues(alpha: 0.5),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(r(12)),
+                    height: h(48),
+                    child: Obx(
+                      () => ElevatedButton(
+                        onPressed: controller.isLoading.value
+                            ? null
+                            : () async {
+                                await controller.login(context);
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: ConstantColor.buttonColor,
+                          disabledBackgroundColor: ConstantColor.buttonColor
+                              .withValues(alpha: 0.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(r(12)),
+                          ),
+                          elevation: 0,
                         ),
-                        elevation: 2,
-                        shadowColor: ConstantColor.buttonColor.withValues(alpha: 0.25),
-                      ),
-                      child: controller.isLoading.value
-                          ? SizedBox(
-                              width: w(24),
-                              height: w(24),
-                              child: const CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "Masuk",
-                                  style: TextStyle(
-                                    fontSize: sp(16),
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
+                        child: controller.isLoading.value
+                            ? SizedBox(
+                                width: w(24),
+                                height: w(24),
+                                child: const CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
                                 ),
-                                SizedBox(width: w(8)),
-                                Icon(Icons.login, color: Colors.white, size: w(20)),
-                              ],
-                            ),
-                    )),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    "Masuk",
+                                    style: TextStyle(
+                                      fontSize: sp(14),
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  SizedBox(width: w(8)),
+                                  Icon(
+                                    Icons.login,
+                                    color: Colors.white,
+                                    size: w(18),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
                   ),
                   SizedBox(height: h(32)),
                 ],
               ),
             ),
           ),
-          
-          SizedBox(height: h(32)),
-          // Bottom Image
+
+          SizedBox(height: h(48)),
+          // Bottom Image Placeholder
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
             child: Container(
               height: h(160),
               width: double.infinity,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(r(24)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(r(24)),
+                ),
                 image: const DecorationImage(
-                  image: NetworkImage("https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80"),
+                  image: NetworkImage(
+                    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=600&q=80",
+                  ),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -352,21 +391,18 @@ class LoginScreen extends StatelessWidget {
           top: BorderSide(color: Colors.grey.withValues(alpha: 0.2), width: 1),
         ),
       ),
-      child: isWeb 
-        ? Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildFooterLeft(sp),
-              _buildFooterRight(sp),
-            ],
-          )
-        : Column(
-            children: [
-              _buildFooterLeft(sp),
-              SizedBox(height: h(16)),
-              _buildFooterRight(sp),
-            ],
-          ),
+      child: isWeb
+          ? Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [_buildFooterLeft(sp), _buildFooterRight(sp)],
+            )
+          : Column(
+              children: [
+                _buildFooterLeft(sp),
+                SizedBox(height: h(16)),
+                _buildFooterRight(sp),
+              ],
+            ),
     );
   }
 

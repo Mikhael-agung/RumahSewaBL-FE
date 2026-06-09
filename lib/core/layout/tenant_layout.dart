@@ -128,16 +128,18 @@ class _SidebarItem extends StatelessWidget {
 class TenantTopBar extends StatelessWidget {
   final String displayName;
   final double fontScale;
+  final VoidCallback? onMenuTap;
 
-  const TenantTopBar({super.key, required this.displayName, this.fontScale = 1.0});
+  const TenantTopBar({super.key, required this.displayName, this.fontScale = 1.0, this.onMenuTap});
 
   @override
   Widget build(BuildContext context) {
     double _fontScale(_) => fontScale;
+    final isNarrow = MediaQuery.of(context).size.width < 900;
 
     return Container(
       height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: TenantColors.background,
         border: Border(bottom: BorderSide(color: Colors.grey.shade300.withOpacity(0.5))),
@@ -149,57 +151,105 @@ class TenantTopBar extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Text(
-            'Rumah Sewa Biru Laut',
-            style: TextStyle(
-              fontFamily: 'Manrope',
-              fontSize: 18 * _fontScale(context),
-              fontWeight: FontWeight.w800,
-              color: TenantColors.primary,
-            ),
-          ),
-          const Spacer(),
-          Container(
-            width: 256,
-            height: 40,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: Colors.grey.shade300.withOpacity(0.5)),
-            ),
-            child: Row(
+      child: isNarrow
+          ? Row(
               children: [
-                Icon(Icons.search, size: 18, color: Colors.grey.shade500),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    decoration: const InputDecoration.collapsed(hintText: ''),
+                if (onMenuTap != null)
+                  IconButton(
+                    onPressed: onMenuTap,
+                    icon: const Icon(Icons.menu),
+                    color: TenantColors.onSurfaceVariant,
                   ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Biru Laut',
+                    style: TextStyle(
+                      fontFamily: 'Manrope',
+                      fontSize: 16 * _fontScale(context),
+                      fontWeight: FontWeight.w800,
+                      color: TenantColors.primary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  tooltip: 'Akun',
+                  icon: const CircleAvatar(radius: 18, backgroundColor: Color(0xFFD1E4FF), child: Icon(Icons.person, size: 18, color: TenantColors.primary)),
+                  onSelected: (value) async {
+                    if (value == 'logout') {
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.clear();
+                      // ignore: use_build_context_synchronously
+                      GoRouter.of(context).go(RouteName.loginScreen);
+                    }
+                  },
+                  itemBuilder: (c) => const [
+                    PopupMenuItem(value: 'logout', child: Text('Logout')),
+                  ],
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                if (onMenuTap != null) ...[
+                  IconButton(
+                    onPressed: onMenuTap,
+                    icon: const Icon(Icons.menu),
+                    color: TenantColors.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  'Rumah Sewa Biru Laut',
+                  style: TextStyle(
+                    fontFamily: 'Manrope',
+                    fontSize: 18 * _fontScale(context),
+                    fontWeight: FontWeight.w800,
+                    color: TenantColors.primary,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  width: 256,
+                  height: 40,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: Colors.grey.shade300.withOpacity(0.5)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.search, size: 18, color: Colors.grey.shade500),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          decoration: const InputDecoration.collapsed(hintText: ''),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 18),
+                IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none), color: TenantColors.onSurfaceVariant),
+                const SizedBox(width: 10),
+                Text('Penyewa Aktif', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1, color: TenantColors.onBackground)),
+                const SizedBox(width: 12),
+                const CircleAvatar(radius: 20, backgroundColor: Color(0xFFD1E4FF), child: Icon(Icons.person, size: 20, color: TenantColors.primary)),
+                const SizedBox(width: 10),
+                TextButton(
+                  onPressed: () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.clear();
+                    // ignore: use_build_context_synchronously
+                    GoRouter.of(context).go(RouteName.loginScreen);
+                  },
+                  child: const Text('Logout', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: TenantColors.onSurfaceVariant)),
                 ),
               ],
             ),
-          ),
-          const SizedBox(width: 18),
-          IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none), color: TenantColors.onSurfaceVariant),
-          const SizedBox(width: 10),
-          Text('Penyewa Aktif', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1, color: TenantColors.onBackground)),
-          const SizedBox(width: 12),
-          const CircleAvatar(radius: 20, backgroundColor: Color(0xFFD1E4FF), child: Icon(Icons.person, size: 20, color: TenantColors.primary)),
-          const SizedBox(width: 10),
-          TextButton(
-            onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.clear();
-              // ignore: use_build_context_synchronously
-              GoRouter.of(context).go(RouteName.loginScreen);
-            },
-            child: const Text('Logout', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: TenantColors.onSurfaceVariant)),
-          ),
-        ],
-      ),
     );
   }
 }
