@@ -29,7 +29,6 @@ class AdminDashPage extends StatelessWidget {
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   color: ConstantColor.textPrimaryColor,
-                  fontFamily: 'Serif',
                 ),
               ),
               const SizedBox(height: 8),

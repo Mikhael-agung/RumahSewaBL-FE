@@ -6,8 +6,11 @@ import 'package:rumah_sewa_biru_laut_fe/core/constants/colors.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/controllers/user_controller.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/routes/route_app.dart';
 
+import 'package:rumah_sewa_biru_laut_fe/core/services/api_service.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  Get.put(ApiService(), permanent: true);
   Get.put(UserController(), permanent: true);
   runApp(const MyApp());
 }

@@ -1,65 +1,53 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:rumah_sewa_biru_laut_fe/core/constants/colors.dart';
+import 'package:get/get.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/layout/base_dashboard_layout.dart';
+import 'package:rumah_sewa_biru_laut_fe/core/controllers/user_controller.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/views/dashboard_content_view.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/views/properties_content_view.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/views/tenants_content_view.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/views/payments_content_view.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/views/maintenance_content_view.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/views/settings_content_view.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/views/support_content_view.dart';
 
 class ManagerDashPage extends StatelessWidget {
-  const ManagerDashPage({super.key});
+  final String activeMenu;
 
-  Future<String> _getUsername() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('user_username') ?? 'User';
-  }
+  const ManagerDashPage({
+    super.key,
+    required this.activeMenu,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<String>(
-      future: _getUsername(),
-      builder: (context, snapshot) {
-        final username = snapshot.data ?? 'User';
+    final userController = Get.find<UserController>();
 
-        return BaseDashboardLayout(
-          title: "Dashboard Manager",
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Halo, $username",
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: ConstantColor.textPrimaryColor,
-                  fontFamily: 'Serif',
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                "Selamat datang di dashboard manajemen Biru Laut.",
-                style: TextStyle(
-                  fontSize: 16,
-                  color: ConstantColor.textSecondaryColor,
-                ),
-              ),
-              const SizedBox(height: 32),
-              Container(
-                height: 400,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: const Center(
-                  child: Text(
-                    "Area Konten Dashboard (Komponen Belum Dibuat)",
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    return BaseDashboardLayout(
+      activeMenu: activeMenu,
+      child: Obx(() {
+        final username = userController.username.value.isNotEmpty 
+            ? userController.username.value 
+            : "Rina Hartati";
+
+        switch (activeMenu) {
+          case 'Dashboard':
+            return DashboardContentView(username: username);
+          case 'Properties':
+            return const PropertiesContentView();
+          case 'Tenants':
+            return const TenantsContentView();
+          case 'Payments':
+            return const PaymentsContentView();
+          case 'Maintenance':
+            return const MaintenanceContentView();
+          case 'Settings':
+            return const SettingsContentView();
+          case 'Support':
+            return const SupportContentView();
+          default:
+            return DashboardContentView(username: username);
+        }
+      }),
     );
   }
 }

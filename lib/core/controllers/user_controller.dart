@@ -6,6 +6,11 @@ class UserController extends GetxController {
   var username = ''.obs;
   var role = ''.obs;
   var token = ''.obs;
+  var activeMenu = 'Dashboard'.obs;
+
+  void changeMenu(String menu) {
+    activeMenu.value = menu;
+  }
 
   String _normalizeRole(String value) {
     return value.trim().toLowerCase().replaceAll(RegExp(r'[\s_-]+'), '');
