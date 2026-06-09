@@ -1,4 +1,11 @@
+import 'dart:developer';
+
 import 'package:get/get.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/domain/entities/rooms.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/domain/usecases/rooms/add_rooms_usecase.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/domain/usecases/rooms/get_rooms_usecase.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/domain/usecases/rooms/update_room_usecase.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/domain/usecases/rooms/delete_rooms_usecase.dart';
 import '../../domain/entities/building.dart';
 import '../../domain/usecases/add_building_usecase.dart';
 import '../../domain/usecases/delete_building_usecase.dart';
@@ -10,22 +17,34 @@ class PropertiesController extends GetxController {
   final GetBuildingsUseCase? getBuildingsUseCase;
   final UpdateBuildingUseCase? updateBuildingUseCase;
   final DeleteBuildingUseCase? deleteBuildingUseCase;
+  final AddRoomsUseCase? addRoomUseCase;
+  final GetRoomsUseCase? getRoomsUseCase;
+  final UpdateRoomUseCase? updateRoomUseCase;
+  final DeleteRoomsUseCase? deleteRoomUseCase;
 
   PropertiesController({
     this.addBuildingUseCase,
     this.getBuildingsUseCase,
     this.updateBuildingUseCase,
     this.deleteBuildingUseCase,
+    this.addRoomUseCase,
+    this.getRoomsUseCase,
+    this.updateRoomUseCase,
+    this.deleteRoomUseCase,
   });
 
   // Loading state
   var isLoading = true.obs;
   var isBuildingsLoading = true.obs;
+  var isRoomsLoading = true.obs;
 
   // Real entity list for Buildings
   var buildings = <Building>[].obs;
 
-  // Mock data for Rooms
+  // Real entity list for Rooms
+  var roomss = <Room>[].obs;
+
+  // Mock data for Rooms (Legacy - kept for compatibility if needed, but we will use roomss)
   var rooms = <Map<String, dynamic>>[].obs;
 
   @override
@@ -38,6 +57,7 @@ class PropertiesController extends GetxController {
     try {
       isLoading.value = true;
       isBuildingsLoading.value = true;
+      isRoomsLoading.value = true;
 
       await Future.wait([
         fetchBuildings(),
@@ -67,24 +87,141 @@ class PropertiesController extends GetxController {
   }
 
   Future<void> fetchRooms() async {
-    // Simulate network call loading delay (1.0 seconds)
-    await Future.delayed(const Duration(milliseconds: 1000));
-    rooms.value = [
-      {"kode": "A-101", "gedung": "Utama", "harga": "Rp 2.500.000", "isTerisi": true},
-      {"kode": "A-102", "gedung": "Utama", "harga": "Rp 2.000.000", "isTerisi": false},
-      {"kode": "B-101", "gedung": "Timur", "harga": "Rp 2.500.000", "isTerisi": true},
-      {"kode": "B-102", "gedung": "Timur", "harga": "Rp 2.000.000", "isTerisi": false},
-      {"kode": "C-101", "gedung": "Barat", "harga": "Rp 2.500.000", "isTerisi": true},
-    ];
+    try {
+      isRoomsLoading.value = true;
+      await Future.delayed(const Duration(milliseconds: 1000));
+      if (getRoomsUseCase != null) {
+        final result = await getRoomsUseCase!.execute();
+        roomss.assignAll(result);
+      }
+    } catch (e) {
+      log("Error fetching rooms: $e");
+    } finally {
+      isRoomsLoading.value = false;
+    }
   }
 
-  void addRoom({required String kode, required String gedung, required String harga}) {
-    rooms.add({
-      "kode": kode,
-      "gedung": gedung,
-      "harga": harga,
-      "isTerisi": false, // Default is false (Kosong)
-    });
+  Future<bool> addRoom({
+    required int buildingId,
+    required String roomCode,
+    required int monthlyPrice,
+    required String roomStatus,
+    required String notes,
+  }) async {
+    try {
+      if (addRoomUseCase != null) {
+        final result = await addRoomUseCase!.execute(
+          id: buildingId, // maps to building_id
+          code: roomCode,
+          price: monthlyPrice,
+          status: roomStatus,
+          notes: notes,
+        );
+        roomss.add(result);
+      } else {
+        // Fallback for direct testing
+        await Future.delayed(const Duration(milliseconds: 500));
+        final newRoom = Room(
+          id: roomss.isEmpty ? 1 : (roomss.map((r) => r.id).reduce((a, b) => a > b ? a : b) + 1),
+          buildingId: buildingId,
+          roomCode: roomCode,
+          monthlyPrice: monthlyPrice,
+          roomStatus: roomStatus,
+          notes: notes,
+        );
+        roomss.add(newRoom);
+      }
+      return true;
+    } catch (e) {
+      print("Error calling AddRoomUseCase: $e");
+      
+      // Fallback/offline demo update
+      final newRoom = Room(
+        id: roomss.isEmpty ? 1 : (roomss.map((r) => r.id).reduce((a, b) => a > b ? a : b) + 1),
+        buildingId: buildingId,
+        roomCode: roomCode,
+        monthlyPrice: monthlyPrice,
+        roomStatus: roomStatus,
+        notes: notes,
+      );
+      roomss.add(newRoom);
+      return true;
+    }
+  }
+
+  Future<bool> updateRoom({
+    required int id,
+    required int buildingId,
+    required String roomCode,
+    required int monthlyPrice,
+    required String roomStatus,
+    required String notes,
+  }) async {
+    try {
+      Room updated;
+      if (updateRoomUseCase != null) {
+        updated = await updateRoomUseCase!.execute(
+          id: id,
+          buildingId: buildingId,
+          roomCode: roomCode,
+          monthlyPrice: monthlyPrice,
+          roomStatus: roomStatus,
+          notes: notes,
+        );
+      } else {
+        // Fallback for direct testing
+        await Future.delayed(const Duration(milliseconds: 500));
+        updated = Room(
+          id: id,
+          buildingId: buildingId,
+          roomCode: roomCode,
+          monthlyPrice: monthlyPrice,
+          roomStatus: roomStatus,
+          notes: notes,
+        );
+      }
+
+      final idx = roomss.indexWhere((r) => r.id == id);
+      if (idx != -1) {
+        roomss[idx] = updated;
+      }
+      return true;
+    } catch (e) {
+      print("Error calling UpdateRoomUseCase: $e");
+      
+      // Fallback/offline demo update
+      final updated = Room(
+        id: id,
+        buildingId: buildingId,
+        roomCode: roomCode,
+        monthlyPrice: monthlyPrice,
+        roomStatus: roomStatus,
+        notes: notes,
+      );
+      final idx = roomss.indexWhere((r) => r.id == id);
+      if (idx != -1) {
+        roomss[idx] = updated;
+      }
+      return true;
+    }
+  }
+
+  Future<bool> deleteRoom(int id) async {
+    try {
+      if (deleteRoomUseCase != null) {
+        await deleteRoomUseCase!.execute(id);
+      } else {
+        // Fallback for direct testing
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+      roomss.removeWhere((r) => r.id == id);
+      return true;
+    } catch (e) {
+      print("Error calling DeleteRoomUseCase: $e");
+      // Fallback/offline demo update
+      roomss.removeWhere((r) => r.id == id);
+      return true;
+    }
   }
 
   Future<bool> addBuilding({

@@ -37,30 +37,8 @@ class PropertiesRemoteDataSourceImpl implements PropertiesRemoteDataSource {
         throw Exception(response.data['message'] ?? 'Failed to get buildings');
       }
     } catch (e) {
-      debugPrint("API Error when fetching buildings: $e. Returning dummy building data.");
-      return [
-        const BuildingModel(
-          id: 1,
-          buildingCode: "GDG-A",
-          buildingName: "Gedung Biru Laut Utama (Dummy)",
-          buildingAddress: "Jl. Utama No. 1",
-          description: "Gedung Utama",
-        ),
-        const BuildingModel(
-          id: 2,
-          buildingCode: "GDG-B",
-          buildingName: "Gedung Biru Laut Timur (Dummy)",
-          buildingAddress: "Jl. Timur No. 2",
-          description: "Gedung Timur",
-        ),
-        const BuildingModel(
-          id: 3,
-          buildingCode: "GDG-C",
-          buildingName: "Gedung Biru Laut Barat (Dummy)",
-          buildingAddress: "Jl. Barat No. 3",
-          description: "Gedung Barat",
-        ),
-      ];
+      debugPrint("API Error when fetching buildings: $e. Returning empty building data.");
+      return [];
     }
   }
 

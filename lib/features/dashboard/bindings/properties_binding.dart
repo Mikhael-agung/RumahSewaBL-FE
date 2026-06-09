@@ -10,6 +10,15 @@ import '../domain/usecases/get_buildings_usecase.dart';
 import '../domain/usecases/update_building_usecase.dart';
 import '../presentation/controllers/properties_controller.dart';
 
+// Rooms Clean Architecture dependencies
+import '../data/datasources/rooms_remote_data_source.dart';
+import '../data/repositories/rooms_repository_impl.dart';
+import '../domain/repositories/rooms_repository.dart';
+import '../domain/usecases/rooms/get_rooms_usecase.dart';
+import '../domain/usecases/rooms/add_rooms_usecase.dart';
+import '../domain/usecases/rooms/update_room_usecase.dart';
+import '../domain/usecases/rooms/delete_rooms_usecase.dart';
+
 class PropertiesBinding extends Bindings {
   @override
   void dependencies() {
@@ -42,12 +51,41 @@ class PropertiesBinding extends Bindings {
       () => DeleteBuildingUseCase(Get.find<PropertiesRepository>()),
     );
 
+    // Rooms bindings
+    Get.lazyPut<RoomsRemoteDataSource>(
+      () => RoomsRemoteDataSourceImpl(apiService: Get.find<ApiService>()),
+    );
+
+    Get.lazyPut<RoomsRepository>(
+      () => RoomsRepositoryImpl(remoteDataSource: Get.find()),
+    );
+
+    Get.lazyPut<GetRoomsUseCase>(
+      () => GetRoomsUseCase(Get.find<RoomsRepository>()),
+    );
+
+    Get.lazyPut<AddRoomsUseCase>(
+      () => AddRoomsUseCase(Get.find<RoomsRepository>()),
+    );
+
+    Get.lazyPut<UpdateRoomUseCase>(
+      () => UpdateRoomUseCase(Get.find<RoomsRepository>()),
+    );
+
+    Get.lazyPut<DeleteRoomsUseCase>(
+      () => DeleteRoomsUseCase(Get.find<RoomsRepository>()),
+    );
+
     Get.lazyPut<PropertiesController>(
       () => PropertiesController(
         addBuildingUseCase: Get.find<AddBuildingUseCase>(),
         getBuildingsUseCase: Get.find<GetBuildingsUseCase>(),
         updateBuildingUseCase: Get.find<UpdateBuildingUseCase>(),
         deleteBuildingUseCase: Get.find<DeleteBuildingUseCase>(),
+        addRoomUseCase: Get.find<AddRoomsUseCase>(),
+        getRoomsUseCase: Get.find<GetRoomsUseCase>(),
+        updateRoomUseCase: Get.find<UpdateRoomUseCase>(),
+        deleteRoomUseCase: Get.find<DeleteRoomsUseCase>(),
       ),
     );
   }
