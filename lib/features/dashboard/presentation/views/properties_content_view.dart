@@ -40,40 +40,9 @@ class PropertiesContentView extends StatelessWidget {
         ),
         SizedBox(height: isMobile ? 24 : 32),
 
-        Obx(() {
-          // Register GetX observers for list changes so that Metric Cards rebuild correctly
-          final _ = controller.buildings.length;
-          final _2 = controller.rooms.length;
-
-          if (controller.isLoading.value) {
-            return Container(
-              height: 350,
-              alignment: Alignment.center,
-              child: const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(ConstantColor.primaryColor),
-                    strokeWidth: 3.5,
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    "Memuat data properti...",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: ConstantColor.textSecondaryColor,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return Column(
+        Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Metric Cards Row
               LayoutBuilder(
                 builder: (context, constraints) {
                   if (constraints.maxWidth < 600) {
@@ -114,8 +83,7 @@ class PropertiesContentView extends StatelessWidget {
               // 3. Daftar Kamar Card
               _buildKamarCard(context, controller),
             ],
-          );
-        }),
+          ),
       ],
     );
   }
@@ -139,7 +107,7 @@ class PropertiesContentView extends StatelessWidget {
       _buildMetricCard(
         context,
         "Total Kamar",
-        generalLoading ? "..." : "${controller.rooms.length * 6}",
+        generalLoading ? "..." : "${controller.rooms.length}",
         Icons.door_back_door_outlined,
         const Color(0xFF0077B6),
         const Color(0xFFE0EFFF),
@@ -147,7 +115,7 @@ class PropertiesContentView extends StatelessWidget {
       _buildMetricCard(
         context,
         "Kamar Terisi",
-        generalLoading ? "..." : "${controller.rooms.where((r) => r['isTerisi'] == true).length}",
+        generalLoading ? "..." : "${controller.rooms.where((r) => r.roomStatus == 'occupied').length}",
         Icons.check_circle_outline_rounded,
         const Color(0xFF0077B6),
         const Color(0xFFE0EFFF),
@@ -155,7 +123,7 @@ class PropertiesContentView extends StatelessWidget {
       _buildMetricCard(
         context,
         "Kamar Kosong",
-        generalLoading ? "..." : "${controller.rooms.where((r) => r['isTerisi'] == false).length}",
+        generalLoading ? "..." : "${controller.rooms.where((r) => r.roomStatus == 'available').length}",
         Icons.hotel_outlined,
         const Color(0xFFD97706),
         const Color(0xFFFEF3C7),
@@ -480,11 +448,7 @@ class PropertiesContentView extends StatelessWidget {
           final index = entry.key + 1;
           final building = entry.value;
           
-          final nameLower = building.buildingName.toLowerCase();
-          final count = controller.rooms.where((room) {
-            final roomGedung = (room['gedung'] ?? '').toString().toLowerCase();
-            return roomGedung.isNotEmpty && nameLower.contains(roomGedung);
-          }).length;
+          final count = controller.rooms.where((room) => room.buildingId == building.id).length;
           final roomsCountStr = "$count Kamar";
 
           return _buildGedungRow(
@@ -566,23 +530,55 @@ class PropertiesContentView extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               // Dropdown Filter Pill
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Row(
-                  children: [
-                    Text(
-                      "Semua Gedung",
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+              Obx(() {
+                final selectedBuildingName = controller.selectedBuildingId.value == null
+                    ? "Semua Gedung"
+                    : controller.buildings
+                        .firstWhereOrNull((b) => b.id == controller.selectedBuildingId.value)
+                        ?.buildingName ?? "Semua Gedung";
+
+                return PopupMenuButton<int>(
+                  onSelected: (int buildingId) {
+                    if (buildingId == -1) {
+                      controller.selectedBuildingId.value = null;
+                    } else {
+                      controller.selectedBuildingId.value = buildingId;
+                    }
+                    debugPrint("Selected Building ID: ${controller.selectedBuildingId.value}");
+                  },
+                  itemBuilder: (BuildContext context) {
+                    return [
+                      const PopupMenuItem<int>(
+                        value: -1,
+                        child: Text("Semua Gedung"),
+                      ),
+                      ...controller.buildings.map((building) {
+                        return PopupMenuItem<int>(
+                          value: building.id,
+                          child: Text(building.buildingName),
+                        );
+                      }).toList(),
+                    ];
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    SizedBox(width: 4),
-                    Icon(Icons.keyboard_arrow_down, size: 16, color: Color(0xFF475569)),
-                  ],
-                ),
-              ),
+                    child: Row(
+                      children: [
+                        Text(
+                          selectedBuildingName,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.keyboard_arrow_down, size: 16, color: Color(0xFF475569)),
+                      ],
+                    ),
+                  ),
+                );
+              }),
               const Spacer(),
               ElevatedButton.icon(
                 onPressed: () => _showAddRoomModal(context, controller),
@@ -605,6 +601,7 @@ class PropertiesContentView extends StatelessWidget {
           // Room table wrapped in horizontal scroll view on mobile
           Obx(() {
             final bool isLoading = controller.isRoomsLoading.value;
+            final _ = controller.selectedBuildingId.value;
             
             return isMobile
                 ? SingleChildScrollView(
@@ -628,7 +625,7 @@ class PropertiesContentView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Obx(() => Text(
-                "Menampilkan ${controller.roomss.length > 5 ? 5 : controller.roomss.length} dari ${controller.roomss.length} kamar",
+                "Menampilkan ${controller.filteredRooms.length > 5 ? 5 : controller.filteredRooms.length} dari ${controller.filteredRooms.length} kamar",
                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
               )),
               // Pagination Controls
@@ -813,7 +810,7 @@ class PropertiesContentView extends StatelessWidget {
         ),
         
         // Table Rows from controller data
-        ...controller.roomss.map((room) {
+        ...controller.filteredRooms.map((room) {
           final building = controller.buildings.firstWhereOrNull((b) => b.id == room.buildingId);
           final buildingName = building?.buildingName ?? (room.building?.buildingName ?? '-');
 
@@ -831,15 +828,11 @@ class PropertiesContentView extends StatelessWidget {
   TableRow _buildKamarRow(BuildContext context, PropertiesController controller, Room room, String buildingName) {
     final String displayStatus = room.roomStatus == "occupied" 
         ? "Terisi" 
-        : room.roomStatus == "maintenance" 
-            ? "Perawatan" 
-            : "Kosong";
+        : "Kosong";
     final Color statusPillColor = room.roomStatus == "occupied" 
         ? const Color(0xFF0077B6) 
-        : room.roomStatus == "maintenance" 
-            ? Colors.orange 
-            : const Color(0xFFE2E8F0);
-    final Color statusTextColor = room.roomStatus == "occupied" || room.roomStatus == "maintenance"
+        : const Color(0xFFE2E8F0);
+    final Color statusTextColor = room.roomStatus == "occupied" 
         ? Colors.white 
         : const Color(0xFF64748B);
 
@@ -1412,7 +1405,6 @@ class _AddRoomDialogState extends State<_AddRoomDialog> {
                     items: const [
                       DropdownMenuItem(value: 'available', child: Text('Kosong')),
                       DropdownMenuItem(value: 'occupied', child: Text('Terisi')),
-                      DropdownMenuItem(value: 'maintenance', child: Text('Perawatan')),
                     ],
                     onChanged: (val) {
                       if (val != null) {
@@ -1745,7 +1737,6 @@ class _EditRoomDialogState extends State<_EditRoomDialog> {
                     items: const [
                       DropdownMenuItem(value: 'available', child: Text('Kosong')),
                       DropdownMenuItem(value: 'occupied', child: Text('Terisi')),
-                      DropdownMenuItem(value: 'maintenance', child: Text('Perawatan')),
                     ],
                     onChanged: (val) {
                       if (val != null) {

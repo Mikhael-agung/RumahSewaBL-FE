@@ -816,6 +816,7 @@ class _TenantsContentViewState extends State<TenantsContentView> {
     return Shimmer.fromColors(
       baseColor: const Color(0xFFF1F5F9),
       highlightColor: const Color(0xFFE2E8F0),
+      period: const Duration(milliseconds: 1000),
       child: Table(
         columnWidths: const {
           0: FlexColumnWidth(2.5),
@@ -830,6 +831,7 @@ class _TenantsContentViewState extends State<TenantsContentView> {
             decoration: const BoxDecoration(
               color: Color(0xFFF8FAFC),
               border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.5)),
+              borderRadius: BorderRadius.all(Radius.circular(12)),
             ),
             children: [
               _buildHeaderCell("NAMA"),
