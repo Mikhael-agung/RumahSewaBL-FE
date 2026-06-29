@@ -275,29 +275,27 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                                               email: email,
                                             );
 
-                                        if (context.mounted) {
-                                          Navigator.of(context).pop();
-                                          if (result.account != null) {
-                                            await _showTenantCredentialDialog(
-                                              result.account!,
-                                            );
-                                          }
+                                        if (!mounted) return;
 
-                                          if (!this.context.mounted) {
-                                            return;
-                                          }
-
-                                          ScaffoldMessenger.of(
-                                            this.context,
-                                          ).showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                "Penyewa berhasil ditambahkan!",
-                                              ),
-                                              backgroundColor: Colors.green,
-                                            ),
+                                        Navigator.of(context).pop();
+                                        if (result.account != null) {
+                                          await _showTenantCredentialDialog(
+                                            result.account!,
                                           );
                                         }
+
+                                        if (!mounted) return;
+
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              "Penyewa berhasil ditambahkan!",
+                                            ),
+                                            backgroundColor: Colors.green,
+                                          ),
+                                        );
                                       } else {
                                         ScaffoldMessenger.of(
                                           context,
