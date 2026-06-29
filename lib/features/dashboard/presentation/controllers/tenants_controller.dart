@@ -21,6 +21,7 @@ class TenantsController extends GetxController {
 
   var isLoading = true.obs;
   var tenants = <Tenant>[].obs;
+  var accounts = <Account>[].obs;
   var filteredTenants = <Tenant>[].obs;
   var searchQuery = ''.obs;
 
@@ -53,16 +54,18 @@ class TenantsController extends GetxController {
       filteredTenants.assignAll(tenants);
     } else {
       filteredTenants.assignAll(
-        tenants.where((t) =>
-            t.fullName.toLowerCase().contains(query.toLowerCase()) ||
-            t.tenantCode.toLowerCase().contains(query.toLowerCase()) ||
-            t.email.toLowerCase().contains(query.toLowerCase()) ||
-            t.phoneNumber.contains(query)),
+        tenants.where(
+          (t) =>
+              t.fullName.toLowerCase().contains(query.toLowerCase()) ||
+              t.tenantCode.toLowerCase().contains(query.toLowerCase()) ||
+              t.email.toLowerCase().contains(query.toLowerCase()) ||
+              t.phoneNumber.contains(query),
+        ),
       );
     }
   }
 
-  Future<bool> addTenant({
+  Future<AddTenantResult> addTenant({
     required String tenantCode,
     required String fullName,
     required String phoneNumber,
@@ -76,25 +79,34 @@ class TenantsController extends GetxController {
           phoneNumber: phoneNumber,
           email: email,
         );
-        tenants.add(result);
+        tenants.add(result.tenant);
+        if (result.account != null) {
+          accounts.add(result.account!);
+        }
+        filterTenants(searchQuery.value);
+        return result;
       } else {
         await Future.delayed(const Duration(milliseconds: 500));
         final newTenant = Tenant(
-          id: tenants.isEmpty ? 1 : (tenants.map((t) => t.id).reduce((a, b) => a > b ? a : b) + 1),
+          id: tenants.isEmpty
+              ? 1
+              : (tenants.map((t) => t.id).reduce((a, b) => a > b ? a : b) + 1),
           tenantCode: tenantCode,
           fullName: fullName,
           phoneNumber: phoneNumber,
           email: email,
         );
         tenants.add(newTenant);
+        filterTenants(searchQuery.value);
+        return AddTenantResult(tenant: newTenant);
       }
-      filterTenants(searchQuery.value);
-      return true;
     } catch (e) {
       log("Error adding tenant: $e");
       // Fallback
       final newTenant = Tenant(
-        id: tenants.isEmpty ? 1 : (tenants.map((t) => t.id).reduce((a, b) => a > b ? a : b) + 1),
+        id: tenants.isEmpty
+            ? 1
+            : (tenants.map((t) => t.id).reduce((a, b) => a > b ? a : b) + 1),
         tenantCode: tenantCode,
         fullName: fullName,
         phoneNumber: phoneNumber,
@@ -102,7 +114,7 @@ class TenantsController extends GetxController {
       );
       tenants.add(newTenant);
       filterTenants(searchQuery.value);
-      return true;
+      return AddTenantResult(tenant: newTenant);
     }
   }
 

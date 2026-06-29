@@ -13,7 +13,7 @@ class TenantsRepositoryImpl implements TenantsRepository {
   }
 
   @override
-  Future<Tenant> addTenant({
+  Future<AddTenantResult> addTenant({
     required String tenantCode,
     required String fullName,
     required String phoneNumber,
@@ -49,4 +49,3 @@ class TenantsRepositoryImpl implements TenantsRepository {
     await remoteDataSource.deleteTenant(id);
   }
 }
-

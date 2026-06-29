@@ -30,3 +30,29 @@ class Tenant {
   }
 }
 
+class Account {
+  final String username;
+  final String password;
+  final String note;
+
+  const Account({
+    required this.username,
+    required this.password,
+    required this.note,
+  });
+
+  Account copyWith({String? username, String? password, String? note}) {
+    return Account(
+      username: username ?? this.username,
+      password: password ?? this.password,
+      note: note ?? this.note,
+    );
+  }
+}
+
+class AddTenantResult {
+  final Tenant tenant;
+  final Account? account;
+
+  const AddTenantResult({required this.tenant, this.account});
+}

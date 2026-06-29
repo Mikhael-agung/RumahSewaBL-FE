@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/constants/colors.dart';
@@ -84,7 +85,9 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                             ),
                             IconButton(
                               icon: const Icon(Icons.close, color: Colors.grey),
-                              onPressed: isLoading ? null : () => Navigator.of(context).pop(),
+                              onPressed: isLoading
+                                  ? null
+                                  : () => Navigator.of(context).pop(),
                             ),
                           ],
                         ),
@@ -104,14 +107,20 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                           enabled: !isLoading,
                           decoration: InputDecoration(
                             hintText: "TNT-...",
-                            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                            hintStyle: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontSize: 14,
+                            ),
                             filled: true,
                             fillColor: ConstantColor.backgroundColor,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
                             ),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 14,
+                              horizontal: 16,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -130,14 +139,20 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                           enabled: !isLoading,
                           decoration: InputDecoration(
                             hintText: "Masukkan nama lengkap...",
-                            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                            hintStyle: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontSize: 14,
+                            ),
                             filled: true,
                             fillColor: ConstantColor.backgroundColor,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
                             ),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 14,
+                              horizontal: 16,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -156,14 +171,20 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                           enabled: !isLoading,
                           decoration: InputDecoration(
                             hintText: "0812...",
-                            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                            hintStyle: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontSize: 14,
+                            ),
                             filled: true,
                             fillColor: ConstantColor.backgroundColor,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
                             ),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 14,
+                              horizontal: 16,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -182,14 +203,20 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                           enabled: !isLoading,
                           decoration: InputDecoration(
                             hintText: "email@example.com",
-                            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                            hintStyle: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontSize: 14,
+                            ),
                             filled: true,
                             fillColor: ConstantColor.backgroundColor,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
                             ),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 14,
+                              horizontal: 16,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -198,12 +225,17 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             ElevatedButton(
-                              onPressed: isLoading ? null : () => Navigator.of(context).pop(),
+                              onPressed: isLoading
+                                  ? null
+                                  : () => Navigator.of(context).pop(),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFF1F5F9),
                                 foregroundColor: ConstantColor.textDarkColor,
                                 elevation: 0,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 16,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(24),
                                 ),
@@ -218,37 +250,64 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                               onPressed: isLoading
                                   ? null
                                   : () async {
-                                      final code = _tenantCodeController.text.trim();
-                                      final name = _fullNameController.text.trim();
-                                      final phone = _phoneNumberController.text.trim();
-                                      final email = _emailController.text.trim();
+                                      final code = _tenantCodeController.text
+                                          .trim();
+                                      final name = _fullNameController.text
+                                          .trim();
+                                      final phone = _phoneNumberController.text
+                                          .trim();
+                                      final email = _emailController.text
+                                          .trim();
 
-                                      if (code.isNotEmpty && name.isNotEmpty && phone.isNotEmpty && email.isNotEmpty) {
+                                      if (code.isNotEmpty &&
+                                          name.isNotEmpty &&
+                                          phone.isNotEmpty &&
+                                          email.isNotEmpty) {
                                         setState(() {
                                           isLoading = true;
                                         });
 
-                                        final success = await _controller.addTenant(
-                                          tenantCode: code,
-                                          fullName: name,
-                                          phoneNumber: phone,
-                                          email: email,
-                                        );
+                                        final result = await _controller
+                                            .addTenant(
+                                              tenantCode: code,
+                                              fullName: name,
+                                              phoneNumber: phone,
+                                              email: email,
+                                            );
 
                                         if (context.mounted) {
                                           Navigator.of(context).pop();
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text(success ? "Penyewa berhasil ditambahkan!" : "Penyewa gagal ditambahkan!"),
-                                              backgroundColor: success ? Colors.green : Colors.red,
+                                          if (result.account != null) {
+                                            await _showTenantCredentialDialog(
+                                              result.account!,
+                                            );
+                                          }
+
+                                          if (!this.context.mounted) {
+                                            return;
+                                          }
+
+                                          ScaffoldMessenger.of(
+                                            this.context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                "Penyewa berhasil ditambahkan!",
+                                              ),
+                                              backgroundColor: Colors.green,
                                             ),
                                           );
                                         }
                                       } else {
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           SnackBar(
-                                            content: const Text("Semua field harus diisi"),
-                                            backgroundColor: Colors.red.shade800,
+                                            content: const Text(
+                                              "Semua field harus diisi",
+                                            ),
+                                            backgroundColor:
+                                                Colors.red.shade800,
                                           ),
                                         );
                                       }
@@ -257,7 +316,10 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                                 backgroundColor: ConstantColor.buttonColor,
                                 foregroundColor: Colors.white,
                                 elevation: 0,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 16,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(24),
                                 ),
@@ -267,13 +329,18 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                                       width: 20,
                                       height: 20,
                                       child: CircularProgressIndicator(
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
                                         strokeWidth: 2,
                                       ),
                                     )
                                   : const Text(
                                       "Simpan",
-                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                             ),
                           ],
@@ -285,6 +352,126 @@ class _TenantsContentViewState extends State<TenantsContentView> {
               },
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showTenantCredentialDialog(Account account) async {
+    bool copiedUsername = false;
+    bool copiedPassword = false;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            final canClose = copiedUsername && copiedPassword;
+
+            Future<void> copyValue(String value, bool isUsername) async {
+              await Clipboard.setData(ClipboardData(text: value));
+              if (!context.mounted) return;
+              setState(() {
+                if (isUsername) {
+                  copiedUsername = true;
+                } else {
+                  copiedPassword = true;
+                }
+              });
+
+              ScaffoldMessenger.of(this.context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    isUsername
+                        ? "Username berhasil di-copy"
+                        : "Password berhasil di-copy",
+                  ),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+
+            return WillPopScope(
+              onWillPop: () async => canClose,
+              child: Dialog(
+                backgroundColor: ConstantColor.surfaceColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 500),
+                  child: Padding(
+                    padding: const EdgeInsets.all(28),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Kredensial Akun Penyewa",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: ConstantColor.textPrimaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          account.note,
+                          style: const TextStyle(
+                            color: ConstantColor.textSecondaryColor,
+                            fontSize: 14,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        _CredentialCopyTile(
+                          label: "Username",
+                          value: account.username,
+                          copied: copiedUsername,
+                          onCopy: () => copyValue(account.username, true),
+                        ),
+                        const SizedBox(height: 12),
+                        _CredentialCopyTile(
+                          label: "Password",
+                          value: account.password,
+                          copied: copiedPassword,
+                          onCopy: () => copyValue(account.password, false),
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: canClose
+                                ? () => Navigator.of(dialogContext).pop()
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: ConstantColor.buttonColor,
+                              foregroundColor: Colors.white,
+                              disabledBackgroundColor: Colors.grey.shade300,
+                              disabledForegroundColor: Colors.grey.shade600,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 16,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                            ),
+                            child: const Text(
+                              "Saya Sudah Menyimpan Kredensial",
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -322,13 +509,16 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                             const Text(
                               "Edit Penyewa",
                               style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  color: ConstantColor.textPrimaryColor),
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: ConstantColor.textPrimaryColor,
+                              ),
                             ),
                             IconButton(
                               icon: const Icon(Icons.close, color: Colors.grey),
-                              onPressed: isLoading ? null : () => Navigator.of(context).pop(),
+                              onPressed: isLoading
+                                  ? null
+                                  : () => Navigator.of(context).pop(),
                             ),
                           ],
                         ),
@@ -348,14 +538,20 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                           enabled: !isLoading,
                           decoration: InputDecoration(
                             hintText: "TNT-...",
-                            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                            hintStyle: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontSize: 14,
+                            ),
                             filled: true,
                             fillColor: ConstantColor.backgroundColor,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
                             ),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 14,
+                              horizontal: 16,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -374,14 +570,20 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                           enabled: !isLoading,
                           decoration: InputDecoration(
                             hintText: "Masukkan nama lengkap...",
-                            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                            hintStyle: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontSize: 14,
+                            ),
                             filled: true,
                             fillColor: ConstantColor.backgroundColor,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
                             ),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 14,
+                              horizontal: 16,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -400,14 +602,20 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                           enabled: !isLoading,
                           decoration: InputDecoration(
                             hintText: "0812...",
-                            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                            hintStyle: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontSize: 14,
+                            ),
                             filled: true,
                             fillColor: ConstantColor.backgroundColor,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
                             ),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 14,
+                              horizontal: 16,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -426,14 +634,20 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                           enabled: !isLoading,
                           decoration: InputDecoration(
                             hintText: "email@example.com",
-                            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                            hintStyle: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontSize: 14,
+                            ),
                             filled: true,
                             fillColor: ConstantColor.backgroundColor,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
                             ),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 14,
+                              horizontal: 16,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -442,12 +656,17 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             ElevatedButton(
-                              onPressed: isLoading ? null : () => Navigator.of(context).pop(),
+                              onPressed: isLoading
+                                  ? null
+                                  : () => Navigator.of(context).pop(),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFF1F5F9),
                                 foregroundColor: ConstantColor.textDarkColor,
                                 elevation: 0,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 16,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(24),
                                 ),
@@ -462,38 +681,59 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                               onPressed: isLoading
                                   ? null
                                   : () async {
-                                      final code = _tenantCodeController.text.trim();
-                                      final name = _fullNameController.text.trim();
-                                      final phone = _phoneNumberController.text.trim();
-                                      final email = _emailController.text.trim();
+                                      final code = _tenantCodeController.text
+                                          .trim();
+                                      final name = _fullNameController.text
+                                          .trim();
+                                      final phone = _phoneNumberController.text
+                                          .trim();
+                                      final email = _emailController.text
+                                          .trim();
 
-                                      if (code.isNotEmpty && name.isNotEmpty && phone.isNotEmpty && email.isNotEmpty) {
+                                      if (code.isNotEmpty &&
+                                          name.isNotEmpty &&
+                                          phone.isNotEmpty &&
+                                          email.isNotEmpty) {
                                         setState(() {
                                           isLoading = true;
                                         });
 
-                                        final success = await _controller.updateTenant(
-                                          id: tenant.id,
-                                          tenantCode: code,
-                                          fullName: name,
-                                          phoneNumber: phone,
-                                          email: email,
-                                        );
+                                        final success = await _controller
+                                            .updateTenant(
+                                              id: tenant.id,
+                                              tenantCode: code,
+                                              fullName: name,
+                                              phoneNumber: phone,
+                                              email: email,
+                                            );
 
                                         if (context.mounted) {
                                           Navigator.of(context).pop();
-                                          ScaffoldMessenger.of(context).showSnackBar(
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
                                             SnackBar(
-                                              content: Text(success ? "Penyewa berhasil diperbarui!" : "Penyewa gagal diperbarui!"),
-                                              backgroundColor: success ? Colors.green : Colors.red,
+                                              content: Text(
+                                                success
+                                                    ? "Penyewa berhasil diperbarui!"
+                                                    : "Penyewa gagal diperbarui!",
+                                              ),
+                                              backgroundColor: success
+                                                  ? Colors.green
+                                                  : Colors.red,
                                             ),
                                           );
                                         }
                                       } else {
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           SnackBar(
-                                            content: const Text("Semua field harus diisi"),
-                                            backgroundColor: Colors.red.shade800,
+                                            content: const Text(
+                                              "Semua field harus diisi",
+                                            ),
+                                            backgroundColor:
+                                                Colors.red.shade800,
                                           ),
                                         );
                                       }
@@ -502,7 +742,10 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                                 backgroundColor: ConstantColor.buttonColor,
                                 foregroundColor: Colors.white,
                                 elevation: 0,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 16,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(24),
                                 ),
@@ -512,13 +755,18 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                                       width: 20,
                                       height: 20,
                                       child: CircularProgressIndicator(
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
                                         strokeWidth: 2,
                                       ),
                                     )
                                   : const Text(
                                       "Simpan",
-                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                             ),
                           ],
@@ -544,45 +792,68 @@ class _TenantsContentViewState extends State<TenantsContentView> {
           builder: (context, setState) {
             return AlertDialog(
               backgroundColor: ConstantColor.surfaceColor,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               title: const Text(
                 "Konfirmasi Hapus",
                 textAlign: TextAlign.center,
-                style: TextStyle(fontWeight: FontWeight.bold, color: ConstantColor.textPrimaryColor),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: ConstantColor.textPrimaryColor,
+                ),
               ),
               content: !isLoading
                   ? const SizedBox(
                       height: 100,
                       child: Center(
                         child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(ConstantColor.primaryColor),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            ConstantColor.primaryColor,
+                          ),
                         ),
                       ),
                     )
                   : Text(
                       "Apakah Anda yakin ingin menghapus penyewa \"${tenant.fullName}\"? Tindakan ini tidak dapat dibatalkan.",
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: ConstantColor.textSecondaryColor),
+                      style: const TextStyle(
+                        color: ConstantColor.textSecondaryColor,
+                      ),
                     ),
               actions: !isLoading
                   ? []
                   : [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        child: const Text("Batal", style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          "Batal",
+                          style: TextStyle(
+                            color: Color(0xFF64748B),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                       ElevatedButton(
                         onPressed: () async {
                           setState(() {
                             isLoading = true;
                           });
-                          final success = await _controller.deleteTenant(tenant.id);
+                          final success = await _controller.deleteTenant(
+                            tenant.id,
+                          );
                           if (context.mounted) {
                             Navigator.of(context).pop();
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(success ? "Penyewa berhasil dihapus!" : "Penyewa gagal dihapus!"),
-                                backgroundColor: success ? Colors.green : Colors.red,
+                                content: Text(
+                                  success
+                                      ? "Penyewa berhasil dihapus!"
+                                      : "Penyewa gagal dihapus!",
+                                ),
+                                backgroundColor: success
+                                    ? Colors.green
+                                    : Colors.red,
                               ),
                             );
                           }
@@ -591,9 +862,14 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                           backgroundColor: Colors.red,
                           foregroundColor: Colors.white,
                           elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
-                        child: const Text("Hapus", style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          "Hapus",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ],
             );
@@ -662,10 +938,19 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                       controller: _searchController,
                       decoration: InputDecoration(
                         hintText: "Cari nama penyewa...",
-                        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
-                        prefixIcon: Icon(Icons.search, color: Colors.grey.shade400, size: 18),
+                        hintStyle: TextStyle(
+                          color: Colors.grey.shade400,
+                          fontSize: 13,
+                        ),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: Colors.grey.shade400,
+                          size: 18,
+                        ),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 11),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 11,
+                        ),
                       ),
                     ),
                   );
@@ -675,12 +960,21 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                     icon: const Icon(Icons.add, size: 16, color: Colors.white),
                     label: const Text(
                       "Tambah Penyewa",
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: ConstantColor.buttonColor,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(22),
+                      ),
                       elevation: 0,
                     ),
                   );
@@ -690,20 +984,14 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                       children: [
                         searchField,
                         const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: addButton,
-                        ),
+                        SizedBox(width: double.infinity, child: addButton),
                       ],
                     );
                   }
 
                   return Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      searchField,
-                      addButton,
-                    ],
+                    children: [searchField, addButton],
                   );
                 },
               ),
@@ -723,7 +1011,11 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.people_outline, size: 64, color: Colors.grey.shade300),
+                        Icon(
+                          Icons.people_outline,
+                          size: 64,
+                          color: Colors.grey.shade300,
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           "Belum ada data penyewa",
@@ -751,12 +1043,18 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                         scrollDirection: Axis.horizontal,
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(minWidth: 800),
-                          child: _buildTenantsTable(context, _controller.filteredTenants),
+                          child: _buildTenantsTable(
+                            context,
+                            _controller.filteredTenants,
+                          ),
                         ),
                       )
                     : SizedBox(
                         width: double.infinity,
-                        child: _buildTenantsTable(context, _controller.filteredTenants),
+                        child: _buildTenantsTable(
+                          context,
+                          _controller.filteredTenants,
+                        ),
                       );
               }),
               const SizedBox(height: 24),
@@ -771,7 +1069,11 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                     final filtered = _controller.filteredTenants.length;
                     return Text(
                       "Menampilkan $filtered dari $total penyewa",
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                      ),
                     );
                   });
 
@@ -798,10 +1100,7 @@ class _TenantsContentViewState extends State<TenantsContentView> {
 
                   return Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      showingText,
-                      paginationControls,
-                    ],
+                    children: [showingText, paginationControls],
                   );
                 },
               ),
@@ -830,7 +1129,9 @@ class _TenantsContentViewState extends State<TenantsContentView> {
           TableRow(
             decoration: const BoxDecoration(
               color: Color(0xFFF8FAFC),
-              border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.5)),
+              border: Border(
+                bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.5),
+              ),
               borderRadius: BorderRadius.all(Radius.circular(12)),
             ),
             children: [
@@ -844,28 +1145,75 @@ class _TenantsContentViewState extends State<TenantsContentView> {
           ...List.generate(3, (_) {
             return TableRow(
               decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1)),
+                border: Border(
+                  bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1),
+                ),
               ),
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
-                  child: Container(height: 14, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16.0,
+                    horizontal: 12.0,
+                  ),
+                  child: Container(
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
-                  child: Container(height: 14, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16.0,
+                    horizontal: 12.0,
+                  ),
+                  child: Container(
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
-                  child: Container(height: 14, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16.0,
+                    horizontal: 12.0,
+                  ),
+                  child: Container(
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
-                  child: Container(height: 14, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16.0,
+                    horizontal: 12.0,
+                  ),
+                  child: Container(
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
-                  child: Container(height: 14, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 16.0,
+                    horizontal: 12.0,
+                  ),
+                  child: Container(
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
                 ),
               ],
             );
@@ -890,7 +1238,9 @@ class _TenantsContentViewState extends State<TenantsContentView> {
         TableRow(
           decoration: const BoxDecoration(
             color: Color(0xFFF8FAFC),
-            border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.5)),
+            border: Border(
+              bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.5),
+            ),
           ),
           children: [
             _buildHeaderCell("NAMA"),
@@ -905,51 +1255,92 @@ class _TenantsContentViewState extends State<TenantsContentView> {
         ...tenantList.map((tenant) {
           return TableRow(
             decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1)),
+              border: Border(
+                bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1),
+              ),
             ),
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16.0,
+                  horizontal: 12.0,
+                ),
                 child: Text(
                   tenant.fullName,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16.0,
+                  horizontal: 12.0,
+                ),
                 child: Text(
                   tenant.tenantCode,
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16.0,
+                  horizontal: 12.0,
+                ),
                 child: Text(
                   tenant.phoneNumber,
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16.0,
+                  horizontal: 12.0,
+                ),
                 child: Text(
                   tenant.email,
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16.0,
+                  horizontal: 12.0,
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.edit_outlined, size: 18, color: ConstantColor.secondaryColor),
+                      icon: const Icon(
+                        Icons.edit_outlined,
+                        size: 18,
+                        color: ConstantColor.secondaryColor,
+                      ),
                       onPressed: () => _showEditTenantDialog(tenant),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
                     const SizedBox(width: 12),
                     IconButton(
-                      icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.red),
+                      icon: const Icon(
+                        Icons.delete_outline_rounded,
+                        size: 18,
+                        color: Colors.red,
+                      ),
                       onPressed: () => _showDeleteTenantConfirmation(tenant),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -997,6 +1388,79 @@ class _TenantsContentViewState extends State<TenantsContentView> {
             color: isSelected ? Colors.white : const Color(0xFF64748B),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CredentialCopyTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool copied;
+  final VoidCallback onCopy;
+
+  const _CredentialCopyTile({
+    required this.label,
+    required this.value,
+    required this.copied,
+    required this.onCopy,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: ConstantColor.backgroundColor,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: ConstantColor.textSecondaryColor,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: ConstantColor.textPrimaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          ElevatedButton.icon(
+            onPressed: onCopy,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: copied
+                  ? Colors.green
+                  : ConstantColor.buttonColor,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            icon: Icon(
+              copied ? Icons.check_rounded : Icons.copy_rounded,
+              size: 18,
+            ),
+            label: Text(copied ? "Tersalin" : "Copy"),
+          ),
+        ],
       ),
     );
   }
