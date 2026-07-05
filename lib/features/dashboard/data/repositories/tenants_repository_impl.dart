@@ -13,6 +13,11 @@ class TenantsRepositoryImpl implements TenantsRepository {
   }
 
   @override
+  Future<Tenant> getTenantDetail(int id) async {
+    return await remoteDataSource.getTenantDetail(id);
+  }
+
+  @override
   Future<AddTenantResult> addTenant({
     required String tenantCode,
     required String fullName,

@@ -263,6 +263,10 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                                           name.isNotEmpty &&
                                           phone.isNotEmpty &&
                                           email.isNotEmpty) {
+                                        final dialogNavigator = Navigator.of(
+                                          context,
+                                        );
+
                                         setState(() {
                                           isLoading = true;
                                         });
@@ -275,9 +279,9 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                                               email: email,
                                             );
 
-                                        if (!mounted) return;
+                                        if (!context.mounted) return;
 
-                                        Navigator.of(context).pop();
+                                        dialogNavigator.pop();
                                         if (result.account != null) {
                                           await _showTenantCredentialDialog(
                                             result.account!,
@@ -287,7 +291,7 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                                         if (!mounted) return;
 
                                         ScaffoldMessenger.of(
-                                          context,
+                                          this.context,
                                         ).showSnackBar(
                                           const SnackBar(
                                             content: Text(
@@ -367,9 +371,8 @@ class _TenantsContentViewState extends State<TenantsContentView> {
           builder: (context, setState) {
             final canClose = copiedUsername && copiedPassword;
 
-            Future<void> copyValue(String value, bool isUsername) async {
-              await Clipboard.setData(ClipboardData(text: value));
-              if (!context.mounted) return;
+            void copyValue(String value, bool isUsername) {
+              Clipboard.setData(ClipboardData(text: value));
               setState(() {
                 if (isUsername) {
                   copiedUsername = true;
@@ -378,6 +381,7 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                 }
               });
 
+              if (!mounted) return;
               ScaffoldMessenger.of(this.context).showSnackBar(
                 SnackBar(
                   content: Text(
@@ -390,8 +394,8 @@ class _TenantsContentViewState extends State<TenantsContentView> {
               );
             }
 
-            return WillPopScope(
-              onWillPop: () async => canClose,
+            return PopScope(
+              canPop: canClose,
               child: Dialog(
                 backgroundColor: ConstantColor.surfaceColor,
                 shape: RoundedRectangleBorder(
@@ -877,6 +881,113 @@ class _TenantsContentViewState extends State<TenantsContentView> {
     );
   }
 
+  void _showTenantDetailDialog(Tenant tenant) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: ConstantColor.surfaceColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: FutureBuilder<Tenant>(
+                future: _controller.getTenantDetail(tenant.id),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox(
+                      height: 220,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            ConstantColor.primaryColor,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Detail Penyewa",
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: ConstantColor.textPrimaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          "Gagal memuat detail penyewa: ${snapshot.error}",
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: ConstantColor.textSecondaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                            child: const Text(
+                              "Tutup",
+                              style: TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+
+                  final detail = snapshot.data ?? tenant;
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              "Detail Penyewa",
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: ConstantColor.textPrimaryColor,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                            icon: const Icon(Icons.close),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      _buildDetailTile("Kode Penyewa", detail.tenantCode),
+                      const SizedBox(height: 10),
+                      _buildDetailTile("Nama Lengkap", detail.fullName),
+                      const SizedBox(height: 10),
+                      _buildDetailTile("No. Telepon", detail.phoneNumber),
+                      const SizedBox(height: 10),
+                      _buildDetailTile("Email", detail.email),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 1024;
@@ -1258,62 +1369,14 @@ class _TenantsContentViewState extends State<TenantsContentView> {
               ),
             ),
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 16.0,
-                  horizontal: 12.0,
-                ),
-                child: Text(
-                  tenant.fullName,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
-                  ),
-                ),
+              _buildBodyCell(
+                tenant.fullName,
+                textColor: const Color(0xFF1E293B),
+                fontWeight: FontWeight.bold,
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 16.0,
-                  horizontal: 12.0,
-                ),
-                child: Text(
-                  tenant.tenantCode,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF64748B),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 16.0,
-                  horizontal: 12.0,
-                ),
-                child: Text(
-                  tenant.phoneNumber,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF64748B),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 16.0,
-                  horizontal: 12.0,
-                ),
-                child: Text(
-                  tenant.email,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF64748B),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
+              _buildBodyCell(tenant.tenantCode),
+              _buildBodyCell(tenant.phoneNumber),
+              _buildBodyCell(tenant.email),
               Padding(
                 padding: const EdgeInsets.symmetric(
                   vertical: 16.0,
@@ -1322,6 +1385,18 @@ class _TenantsContentViewState extends State<TenantsContentView> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.visibility_outlined,
+                        size: 18,
+                        color: ConstantColor.primaryColor,
+                      ),
+                      tooltip: "Detail Penyewa",
+                      onPressed: () => _showTenantDetailDialog(tenant),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    const SizedBox(width: 12),
                     IconButton(
                       icon: const Icon(
                         Icons.edit_outlined,
@@ -1350,6 +1425,57 @@ class _TenantsContentViewState extends State<TenantsContentView> {
           );
         }).toList(),
       ],
+    );
+  }
+
+  Widget _buildBodyCell(
+    String text, {
+    Color textColor = const Color(0xFF64748B),
+    FontWeight fontWeight = FontWeight.w500,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 14,
+          color: textColor,
+          fontWeight: fontWeight,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailTile(String label, String value) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: ConstantColor.backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: ConstantColor.textSecondaryColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value.isEmpty ? "-" : value,
+            style: const TextStyle(
+              fontSize: 14,
+              color: ConstantColor.textPrimaryColor,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

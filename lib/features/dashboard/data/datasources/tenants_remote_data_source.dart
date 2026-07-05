@@ -4,6 +4,7 @@ import '../models/tenant_model.dart';
 
 abstract class TenantsRemoteDataSource {
   Future<List<TenantModel>> getTenants();
+  Future<TenantModel> getTenantDetail(int id);
   Future<AddTenantResultModel> addTenant({
     required String tenantCode,
     required String fullName,
@@ -43,6 +44,18 @@ class TenantsRemoteDataSourceImpl implements TenantsRemoteDataSource {
         "API Error when fetching tenants: $e. Returning empty tenant list.",
       );
       return [];
+    }
+  }
+
+  @override
+  Future<TenantModel> getTenantDetail(int id) async {
+    final response = await apiService.get('/api/tenants/$id');
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return TenantModel.fromJson(response.data);
+    } else {
+      throw Exception(
+        response.data['message'] ?? 'Failed to get tenant detail',
+      );
     }
   }
 

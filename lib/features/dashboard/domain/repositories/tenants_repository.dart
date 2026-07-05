@@ -2,6 +2,7 @@ import '../entities/tenant.dart';
 
 abstract class TenantsRepository {
   Future<List<Tenant>> getTenants();
+  Future<Tenant> getTenantDetail(int id);
   Future<AddTenantResult> addTenant({
     required String tenantCode,
     required String fullName,

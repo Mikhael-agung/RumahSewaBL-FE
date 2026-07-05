@@ -2,18 +2,21 @@ import 'dart:developer';
 import 'package:get/get.dart';
 import '../../domain/entities/tenant.dart';
 import '../../domain/usecases/tenants/get_tenants_usecase.dart';
+import '../../domain/usecases/tenants/get_tenant_detail_usecase.dart';
 import '../../domain/usecases/tenants/add_tenant_usecase.dart';
 import '../../domain/usecases/tenants/update_tenant_usecase.dart';
 import '../../domain/usecases/tenants/delete_tenant_usecase.dart';
 
 class TenantsController extends GetxController {
   final GetTenantsUseCase? getTenantsUseCase;
+  final GetTenantDetailUseCase? getTenantDetailUseCase;
   final AddTenantUseCase? addTenantUseCase;
   final UpdateTenantUseCase? updateTenantUseCase;
   final DeleteTenantUseCase? deleteTenantUseCase;
 
   TenantsController({
     this.getTenantsUseCase,
+    this.getTenantDetailUseCase,
     this.addTenantUseCase,
     this.updateTenantUseCase,
     this.deleteTenantUseCase,
@@ -63,6 +66,23 @@ class TenantsController extends GetxController {
         ),
       );
     }
+  }
+
+  Future<Tenant> getTenantDetail(int id) async {
+    try {
+      if (getTenantDetailUseCase != null) {
+        return await getTenantDetailUseCase!.execute(id);
+      }
+    } catch (e) {
+      log("Error fetching tenant detail: $e");
+    }
+
+    final localTenant = tenants.firstWhereOrNull((t) => t.id == id);
+    if (localTenant != null) {
+      return localTenant;
+    }
+
+    throw Exception("Tenant dengan id $id tidak ditemukan");
   }
 
   Future<AddTenantResult> addTenant({
