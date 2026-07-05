@@ -4,7 +4,8 @@ import '../models/tenant_model.dart';
 
 abstract class TenantsRemoteDataSource {
   Future<List<TenantModel>> getTenants();
-  Future<TenantModel> addTenant({
+  Future<TenantModel> getTenantDetail(int id);
+  Future<AddTenantResultModel> addTenant({
     required String tenantCode,
     required String fullName,
     required String phoneNumber,
@@ -31,19 +32,35 @@ class TenantsRemoteDataSourceImpl implements TenantsRemoteDataSource {
       final response = await apiService.get('/api/tenants');
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
-        final List<dynamic> dataList = (data is Map && data.containsKey('data')) ? data['data'] : (data is List ? data : []);
+        final List<dynamic> dataList = (data is Map && data.containsKey('data'))
+            ? data['data']
+            : (data is List ? data : []);
         return dataList.map((json) => TenantModel.fromJson(json)).toList();
       } else {
         throw Exception(response.data['message'] ?? 'Failed to get tenants');
       }
     } catch (e) {
-      debugPrint("API Error when fetching tenants: $e. Returning empty tenant list.");
+      debugPrint(
+        "API Error when fetching tenants: $e. Returning empty tenant list.",
+      );
       return [];
     }
   }
 
   @override
-  Future<TenantModel> addTenant({
+  Future<TenantModel> getTenantDetail(int id) async {
+    final response = await apiService.get('/api/tenants/$id');
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return TenantModel.fromJson(response.data);
+    } else {
+      throw Exception(
+        response.data['message'] ?? 'Failed to get tenant detail',
+      );
+    }
+  }
+
+  @override
+  Future<AddTenantResultModel> addTenant({
     required String tenantCode,
     required String fullName,
     required String phoneNumber,
@@ -61,7 +78,7 @@ class TenantsRemoteDataSourceImpl implements TenantsRemoteDataSource {
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       debugPrint("response: ${response.data}");
-      return TenantModel.fromJson(response.data);
+      return AddTenantResultModel.fromJson(response.data);
     } else {
       throw Exception(response.data['message'] ?? 'Failed to add tenant');
     }
@@ -93,7 +110,9 @@ class TenantsRemoteDataSourceImpl implements TenantsRemoteDataSource {
         throw Exception(response.data['message'] ?? 'Failed to update tenant');
       }
     } catch (e) {
-      debugPrint("API Error when updating tenant: $e. Performing local simulation.");
+      debugPrint(
+        "API Error when updating tenant: $e. Performing local simulation.",
+      );
       return TenantModel(
         id: id,
         tenantCode: tenantCode,
@@ -108,14 +127,17 @@ class TenantsRemoteDataSourceImpl implements TenantsRemoteDataSource {
   Future<void> deleteTenant(int id) async {
     try {
       final response = await apiService.delete('/api/tenants/$id');
-      if (response.statusCode == 200 || response.statusCode == 204 || response.statusCode == 201) {
+      if (response.statusCode == 200 ||
+          response.statusCode == 204 ||
+          response.statusCode == 201) {
         debugPrint("Tenant deleted successfully");
       } else {
         throw Exception(response.data['message'] ?? 'Failed to delete tenant');
       }
     } catch (e) {
-      debugPrint("API Error when deleting tenant: $e. Performing local simulation.");
+      debugPrint(
+        "API Error when deleting tenant: $e. Performing local simulation.",
+      );
     }
   }
 }
-

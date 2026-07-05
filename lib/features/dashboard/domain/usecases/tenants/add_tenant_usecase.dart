@@ -6,7 +6,7 @@ class AddTenantUseCase {
 
   AddTenantUseCase(this.repository);
 
-  Future<Tenant> execute({
+  Future<AddTenantResult> execute({
     required String tenantCode,
     required String fullName,
     required String phoneNumber,
@@ -20,4 +20,3 @@ class AddTenantUseCase {
     );
   }
 }
-

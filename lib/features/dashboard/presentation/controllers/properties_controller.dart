@@ -42,10 +42,14 @@ class PropertiesController extends GetxController {
   var buildings = <Building>[].obs;
 
   // Real entity list for Rooms
-  var roomss = <Room>[].obs;
+  var rooms = <Room>[].obs;
 
-  // Mock data for Rooms (Legacy - kept for compatibility if needed, but we will use roomss)
-  var rooms = <Map<String, dynamic>>[].obs;
+  var selectedBuildingId = Rxn<int>();
+
+  // Filtered rooms list
+  List<Room> get filteredRooms => selectedBuildingId.value == null
+      ? rooms
+      : rooms.where((room) => room.buildingId == selectedBuildingId.value).toList();
 
   @override
   void onInit() {
@@ -73,14 +77,12 @@ class PropertiesController extends GetxController {
   Future<void> fetchBuildings() async {
     try {
       isBuildingsLoading.value = true;
-      // Add a small artificial delay of 1.5s to display the premium shimmer properly
       await Future.delayed(const Duration(milliseconds: 1500));
       if (getBuildingsUseCase != null) {
         final result = await getBuildingsUseCase!.execute();
         buildings.assignAll(result);
       }
     } catch (e) {
-      // Fallback is handled inside the repository/datasource, but we catch here to be safe
     } finally {
       isBuildingsLoading.value = false;
     }
@@ -92,7 +94,7 @@ class PropertiesController extends GetxController {
       await Future.delayed(const Duration(milliseconds: 1000));
       if (getRoomsUseCase != null) {
         final result = await getRoomsUseCase!.execute();
-        roomss.assignAll(result);
+        rooms.assignAll(result);
       }
     } catch (e) {
       log("Error fetching rooms: $e");
@@ -117,35 +119,22 @@ class PropertiesController extends GetxController {
           status: roomStatus,
           notes: notes,
         );
-        roomss.add(result);
+        rooms.insert(0, result);
       } else {
-        // Fallback for direct testing
         await Future.delayed(const Duration(milliseconds: 500));
         final newRoom = Room(
-          id: roomss.isEmpty ? 1 : (roomss.map((r) => r.id).reduce((a, b) => a > b ? a : b) + 1),
+          id: rooms.isEmpty ? 1 : (rooms.map((r) => r.id).reduce((a, b) => a > b ? a : b) + 1),
           buildingId: buildingId,
           roomCode: roomCode,
           monthlyPrice: monthlyPrice,
           roomStatus: roomStatus,
           notes: notes,
         );
-        roomss.add(newRoom);
+        rooms.insert(0, newRoom);
       }
       return true;
     } catch (e) {
-      print("Error calling AddRoomUseCase: $e");
-      
-      // Fallback/offline demo update
-      final newRoom = Room(
-        id: roomss.isEmpty ? 1 : (roomss.map((r) => r.id).reduce((a, b) => a > b ? a : b) + 1),
-        buildingId: buildingId,
-        roomCode: roomCode,
-        monthlyPrice: monthlyPrice,
-        roomStatus: roomStatus,
-        notes: notes,
-      );
-      roomss.add(newRoom);
-      return true;
+      return false;
     }
   }
 
@@ -181,28 +170,13 @@ class PropertiesController extends GetxController {
         );
       }
 
-      final idx = roomss.indexWhere((r) => r.id == id);
+      final idx = rooms.indexWhere((r) => r.id == id);
       if (idx != -1) {
-        roomss[idx] = updated;
+        rooms[idx] = updated;
       }
       return true;
     } catch (e) {
-      print("Error calling UpdateRoomUseCase: $e");
-      
-      // Fallback/offline demo update
-      final updated = Room(
-        id: id,
-        buildingId: buildingId,
-        roomCode: roomCode,
-        monthlyPrice: monthlyPrice,
-        roomStatus: roomStatus,
-        notes: notes,
-      );
-      final idx = roomss.indexWhere((r) => r.id == id);
-      if (idx != -1) {
-        roomss[idx] = updated;
-      }
-      return true;
+      return false;
     }
   }
 
@@ -214,13 +188,10 @@ class PropertiesController extends GetxController {
         // Fallback for direct testing
         await Future.delayed(const Duration(milliseconds: 500));
       }
-      roomss.removeWhere((r) => r.id == id);
+      rooms.removeWhere((r) => r.id == id);
       return true;
     } catch (e) {
-      print("Error calling DeleteRoomUseCase: $e");
-      // Fallback/offline demo update
-      roomss.removeWhere((r) => r.id == id);
-      return true;
+      return false;
     }
   }
 

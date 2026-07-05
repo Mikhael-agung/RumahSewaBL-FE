@@ -38,8 +38,9 @@ class RoomsRemoteDataSourceImpl implements RoomsRemoteDataSource {
       } else {
         throw Exception(response.data['message'] ?? 'Failed to get rooms');
       }
-    } catch (e) {
-      debugPrint("API Error when fetching rooms: $e. Returning empty room data.");
+    } catch (e, stackTrace) {
+      debugPrint("API Error when fetching rooms: $e");
+      debugPrintStack(stackTrace: stackTrace);
       return [];
     }
   }
@@ -52,22 +53,28 @@ class RoomsRemoteDataSourceImpl implements RoomsRemoteDataSource {
     required String roomStatus,
     required String notes,
   }) async {
-    final response = await apiService.post(
-      '/api/rooms',
-      data: {
-        'building_id': buildingId,
-        'room_code': roomCode,
-        'monthly_price': monthlyPrice,
-        'room_status': roomStatus,
-        'notes': notes,
-      },
-    );
+    try {
+      final response = await apiService.post(
+        '/api/rooms',
+        data: {
+          'building_id': buildingId,
+          'room_code': roomCode,
+          'monthly_price': monthlyPrice,
+          'room_status': roomStatus,
+          'notes': notes,
+        },
+      );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      debugPrint("response: ${response.data}");
-      return RoomModel.fromJson(response.data);
-    } else {
-      throw Exception(response.data['message'] ?? 'Failed to add room');
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint("addRoom response: ${response.data}");
+        return RoomModel.fromJson(response.data);
+      } else {
+        throw Exception(response.data['message'] ?? 'Failed to add room');
+      }
+    } catch (e, stackTrace) {
+      debugPrint("Error in addRoom remote data source: $e");
+      debugPrintStack(stackTrace: stackTrace);
+      rethrow;
     }
   }
 
@@ -80,22 +87,28 @@ class RoomsRemoteDataSourceImpl implements RoomsRemoteDataSource {
     required String roomStatus,
     required String notes,
   }) async {
-    final response = await apiService.put(
-      '/api/rooms/$id',
-      data: {
-        'building_id': buildingId,
-        'room_code': roomCode,
-        'monthly_price': monthlyPrice,
-        'room_status': roomStatus,
-        'notes': notes,
-      },
-    );
+    try {
+      final response = await apiService.put(
+        '/api/rooms/$id',
+        data: {
+          'building_id': buildingId,
+          'room_code': roomCode,
+          'monthly_price': monthlyPrice,
+          'room_status': roomStatus,
+          'notes': notes,
+        },
+      );
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      debugPrint("response: ${response.data}");
-      return RoomModel.fromJson(response.data);
-    } else {
-      throw Exception(response.data['message'] ?? 'Failed to update room');
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint("updateRoom response: ${response.data}");
+        return RoomModel.fromJson(response.data);
+      } else {
+        throw Exception(response.data['message'] ?? 'Failed to update room');
+      }
+    } catch (e, stackTrace) {
+      debugPrint("Error in updateRoom remote data source: $e");
+      debugPrintStack(stackTrace: stackTrace);
+      rethrow;
     }
   }
 

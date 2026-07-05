@@ -13,7 +13,7 @@ class BuildingModel extends Building {
     // If the backend returns wrapped or nested JSON, handle it appropriately
     final data = json['data'] ?? json;
     return BuildingModel(
-      id: data['id'] ?? 0,
+      id: int.tryParse(data['id']?.toString() ?? '') ?? 0,
       buildingCode: data['building_code'] ?? '',
       buildingName: data['building_name'] ?? '',
       buildingAddress: data['building_address'] ?? '',

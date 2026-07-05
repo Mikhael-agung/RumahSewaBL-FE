@@ -5,6 +5,7 @@ import '../data/datasources/tenants_remote_data_source.dart';
 import '../data/repositories/tenants_repository_impl.dart';
 import '../domain/repositories/tenants_repository.dart';
 import '../domain/usecases/tenants/get_tenants_usecase.dart';
+import '../domain/usecases/tenants/get_tenant_detail_usecase.dart';
 import '../domain/usecases/tenants/add_tenant_usecase.dart';
 import '../domain/usecases/tenants/update_tenant_usecase.dart';
 import '../domain/usecases/tenants/delete_tenant_usecase.dart';
@@ -29,6 +30,10 @@ class TenantsBinding extends Bindings {
       () => GetTenantsUseCase(Get.find<TenantsRepository>()),
     );
 
+    Get.lazyPut<GetTenantDetailUseCase>(
+      () => GetTenantDetailUseCase(Get.find<TenantsRepository>()),
+    );
+
     Get.lazyPut<AddTenantUseCase>(
       () => AddTenantUseCase(Get.find<TenantsRepository>()),
     );
@@ -44,6 +49,7 @@ class TenantsBinding extends Bindings {
     Get.lazyPut<TenantsController>(
       () => TenantsController(
         getTenantsUseCase: Get.find<GetTenantsUseCase>(),
+        getTenantDetailUseCase: Get.find<GetTenantDetailUseCase>(),
         addTenantUseCase: Get.find<AddTenantUseCase>(),
         updateTenantUseCase: Get.find<UpdateTenantUseCase>(),
         deleteTenantUseCase: Get.find<DeleteTenantUseCase>(),

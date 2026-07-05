@@ -16,7 +16,7 @@ class Building {
   factory Building.fromJson(Map<String, dynamic> json) {
     final data = json['data'] ?? json;
     return Building(
-      id: data['id'] ?? 0,
+      id: int.tryParse(data['id']?.toString() ?? '') ?? 0,
       buildingCode: data['building_code'] ?? '',
       buildingName: data['building_name'] ?? '',
       buildingAddress: data['building_address'] ?? '',

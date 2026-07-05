@@ -31,3 +31,32 @@ class TenantModel extends Tenant {
   }
 }
 
+class AccountModel extends Account {
+  const AccountModel({
+    required super.username,
+    required super.password,
+    required super.note,
+  });
+
+  factory AccountModel.fromJson(Map<String, dynamic> json) {
+    return AccountModel(
+      username: json['username'] ?? '',
+      password: json['password'] ?? '',
+      note: json['note'] ?? '',
+    );
+  }
+}
+
+class AddTenantResultModel extends AddTenantResult {
+  const AddTenantResultModel({required super.tenant, super.account});
+
+  factory AddTenantResultModel.fromJson(Map<String, dynamic> json) {
+    final accountJson = json['account'];
+    return AddTenantResultModel(
+      tenant: TenantModel.fromJson(json),
+      account: accountJson is Map<String, dynamic>
+          ? AccountModel.fromJson(accountJson)
+          : null,
+    );
+  }
+}
