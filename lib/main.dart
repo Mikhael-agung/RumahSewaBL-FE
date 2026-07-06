@@ -7,11 +7,17 @@ import 'package:rumah_sewa_biru_laut_fe/core/controllers/user_controller.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/routes/route_app.dart';
 
 import 'package:rumah_sewa_biru_laut_fe/core/services/api_service.dart';
+import 'package:rumah_sewa_biru_laut_fe/core/services/global_notification_service.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Get.put(ApiService(), permanent: true);
   Get.put(UserController(), permanent: true);
+  final notificationService = Get.put(
+    GlobalNotificationService(),
+    permanent: true,
+  );
+  await notificationService.initialize();
   runApp(const MyApp());
 }
 
@@ -35,7 +41,9 @@ class MyApp extends StatelessWidget {
           builder: (context, child) {
             final mediaQuery = MediaQuery.of(context);
             return MediaQuery(
-              data:mediaQuery.copyWith(textScaler: const TextScaler.linear(1.0)),
+              data: mediaQuery.copyWith(
+                textScaler: const TextScaler.linear(1.0),
+              ),
               child: child!,
             );
           },
