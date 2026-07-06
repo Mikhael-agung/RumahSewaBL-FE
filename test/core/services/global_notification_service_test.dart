@@ -2,6 +2,37 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/services/global_notification_service.dart';
 
 void main() {
+  group('NotificationUnreadCountParser', () {
+    test('parses unread count from map.data.unread_count', () {
+      final payload = {
+        'success': true,
+        'data': {'unread_count': 7},
+      };
+
+      final result = NotificationUnreadCountParser.parse(payload);
+
+      expect(result, 7);
+    });
+
+    test('parses unread count from top-level count', () {
+      final payload = {'count': '4'};
+
+      final result = NotificationUnreadCountParser.parse(payload);
+
+      expect(result, 4);
+    });
+
+    test('returns null for unsupported payload', () {
+      final payload = {
+        'data': {'foo': 'bar'},
+      };
+
+      final result = NotificationUnreadCountParser.parse(payload);
+
+      expect(result, isNull);
+    });
+  });
+
   group('NotificationPayloadParser', () {
     test('parses paginated payload from map.data.data list', () {
       final payload = {
@@ -136,6 +167,15 @@ void main() {
 
       expect(cache.seenIds.length, 2);
       expect(cache.seenIds, ['2', '3']);
+    });
+
+    test('clears seen ids index', () {
+      final cache = NotificationDedupeCache(maxEntries: 3);
+      cache.loadSeenIds(const ['a', 'b', 'c']);
+
+      cache.clear();
+
+      expect(cache.seenIds, isEmpty);
     });
   });
 }

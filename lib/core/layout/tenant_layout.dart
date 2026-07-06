@@ -173,7 +173,9 @@ class TenantTopBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: TenantColors.background,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade300.withOpacity(0.5))),
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade300.withOpacity(0.5)),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -315,8 +317,7 @@ class TenantTopBar extends StatelessWidget {
 
   void _showNotificationSheet(BuildContext context) {
     final notificationService = Get.find<GlobalNotificationService>();
-    notificationService.markAllAsRead();
-    notificationService.refreshNow();
+    notificationService.readAll();
 
     showModalBottomSheet<void>(
       context: context,

@@ -132,6 +132,27 @@ class NotificationPayloadParser {
   }
 }
 
+class NotificationUnreadCountParser {
+  static int? parse(dynamic payload) {
+    if (payload is! Map) return null;
+
+    final map = Map<String, dynamic>.from(payload);
+    final envelope = map['data'];
+    if (envelope is Map) {
+      final dataMap = Map<String, dynamic>.from(envelope);
+      return _toInt(dataMap['unread_count'] ?? dataMap['unreadCount']);
+    }
+
+    return _toInt(map['unread_count'] ?? map['unreadCount'] ?? map['count']);
+  }
+
+  static int? _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+}
+
 class NotificationDedupeCache {
   final int maxEntries;
   final List<String> _seenIds = [];
@@ -145,6 +166,10 @@ class NotificationDedupeCache {
       ..clear()
       ..addAll(ids.where((id) => id.isNotEmpty));
     _shrinkToLimit();
+  }
+
+  void clear() {
+    _seenIds.clear();
   }
 
   List<AppNotificationItem> filterUnseen(List<AppNotificationItem> incoming) {
@@ -173,6 +198,7 @@ class GlobalNotificationService extends GetxService
     with WidgetsBindingObserver {
   static const _seenIdsStorageKey = 'notification_seen_ids';
   static const _defaultPerPage = 10;
+  static const _pollInterval = Duration(seconds: 30);
 
   final ApiService _apiService = Get.find<ApiService>();
   final FlutterLocalNotificationsPlugin _localNotifications =
@@ -217,10 +243,7 @@ class GlobalNotificationService extends GetxService
 
     _isPolling = true;
     await _pollNotifications();
-    _pollingTimer = Timer.periodic(
-      const Duration(seconds: 15),
-      (_) => _pollNotifications(),
-    );
+    _pollingTimer = Timer.periodic(_pollInterval, (_) => _pollNotifications());
   }
 
   Future<void> stopPolling({bool clearState = false}) async {
@@ -263,6 +286,17 @@ class GlobalNotificationService extends GetxService
         .toList();
     notifications.assignAll(updated);
     unreadCount.value = 0;
+  }
+
+  Future<void> readAll() async {
+    _clearNotificationIndex();
+    try {
+      await _apiService.post('/api/notifications/read-all');
+    } catch (_) {
+      // Keep silent because the index is intentionally cleared optimistically.
+    } finally {
+      await _pollNotifications();
+    }
   }
 
   @override
@@ -310,6 +344,17 @@ class GlobalNotificationService extends GetxService
       append: false,
       showLocalNotification: true,
     );
+    await _fetchUnreadCount();
+  }
+
+  void _clearNotificationIndex() {
+    notifications.clear();
+    unreadCount.value = 0;
+    currentPage.value = 1;
+    lastPage.value = 1;
+    totalItems.value = 0;
+    _dedupeCache.clear();
+    unawaited(_persistSeenIds());
   }
 
   Future<void> _fetchNotificationsPage({
@@ -334,7 +379,6 @@ class GlobalNotificationService extends GetxService
       currentPage.value = parsed.currentPage;
       lastPage.value = parsed.lastPage;
       totalItems.value = parsed.total;
-      unreadCount.value = notifications.where((item) => !item.isRead).length;
 
       if (showLocalNotification) {
         final unseen = _dedupeCache.filterUnseen(
@@ -351,6 +395,18 @@ class GlobalNotificationService extends GetxService
       // Keep silent to avoid notification spam on intermittent network errors.
     } finally {
       _isRequestInFlight = false;
+    }
+  }
+
+  Future<void> _fetchUnreadCount() async {
+    try {
+      final response = await _apiService.get('/api/notifications/unread-count');
+      final parsedCount = NotificationUnreadCountParser.parse(response.data);
+      if (parsedCount != null) {
+        unreadCount.value = parsedCount;
+      }
+    } catch (_) {
+      // Keep unread count stable when endpoint is temporarily unreachable.
     }
   }
 

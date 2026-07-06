@@ -14,7 +14,12 @@ class BaseDashboardLayout extends StatelessWidget {
   final String? title; // Optional title for the main content area
   final String? activeMenu; // Optional active menu for sidebar highlighting
 
-  const BaseDashboardLayout({super.key, required this.child, this.title, this.activeMenu});
+  const BaseDashboardLayout({
+    super.key,
+    required this.child,
+    this.title,
+    this.activeMenu,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -27,9 +32,22 @@ class BaseDashboardLayout extends StatelessWidget {
           ? Obx(() {
               final username = userController.username.value;
               final role = userController.role.value;
-              final currentActiveMenu = activeMenu ?? userController.activeMenu.value;
-              final displayRole = role.isNotEmpty ? "${role[0].toUpperCase()}${role.substring(1).toLowerCase()} Aktif" : "Manager Aktif";
-              return Drawer(width: 260, child: _buildSidebar(context, username, displayRole, currentActiveMenu, userController, isMobile));
+              final currentActiveMenu =
+                  activeMenu ?? userController.activeMenu.value;
+              final displayRole = role.isNotEmpty
+                  ? "${role[0].toUpperCase()}${role.substring(1).toLowerCase()} Aktif"
+                  : "Manager Aktif";
+              return Drawer(
+                width: 260,
+                child: _buildSidebar(
+                  context,
+                  username,
+                  displayRole,
+                  currentActiveMenu,
+                  userController,
+                  isMobile,
+                ),
+              );
             })
           : null,
       body: Obx(() {
@@ -38,25 +56,42 @@ class BaseDashboardLayout extends StatelessWidget {
         final currentActiveMenu = activeMenu ?? userController.activeMenu.value;
 
         // Capitalize role for display
-        final displayRole = role.isNotEmpty ? "${role[0].toUpperCase()}${role.substring(1).toLowerCase()} Aktif" : "Manager Aktif";
+        final displayRole = role.isNotEmpty
+            ? "${role[0].toUpperCase()}${role.substring(1).toLowerCase()} Aktif"
+            : "Manager Aktif";
 
         return Row(
           children: [
-            if (!isMobile) _buildSidebar(context, username, displayRole, currentActiveMenu, userController, isMobile),
+            if (!isMobile)
+              _buildSidebar(
+                context,
+                username,
+                displayRole,
+                currentActiveMenu,
+                userController,
+                isMobile,
+              ),
             Expanded(
               child: Column(
                 children: [
                   _buildTopAppBar(context, username, isMobile),
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16.0 : 40.0, vertical: isMobile ? 20.0 : 32.0),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isMobile ? 16.0 : 40.0,
+                        vertical: isMobile ? 20.0 : 32.0,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (title != null) ...[
                             Text(
                               title!,
-                              style: TextStyle(fontSize: isMobile ? 24 : 32, fontWeight: FontWeight.bold, color: ConstantColor.textPrimaryColor),
+                              style: TextStyle(
+                                fontSize: isMobile ? 24 : 32,
+                                fontWeight: FontWeight.bold,
+                                color: ConstantColor.textPrimaryColor,
+                              ),
                             ),
                             SizedBox(height: isMobile ? 20 : 32),
                           ],
@@ -76,7 +111,14 @@ class BaseDashboardLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildSidebar(BuildContext context, String username, String role, String activeMenu, UserController userController, bool isMobile) {
+  Widget _buildSidebar(
+    BuildContext context,
+    String username,
+    String role,
+    String activeMenu,
+    UserController userController,
+    bool isMobile,
+  ) {
     return Container(
       width: 260,
       decoration: const BoxDecoration(
@@ -89,7 +131,11 @@ class BaseDashboardLayout extends StatelessWidget {
         children: [
           const Text(
             "Rumah Sewa Biru Laut",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: ConstantColor.textPrimaryColor),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: ConstantColor.textPrimaryColor,
+            ),
           ),
           const SizedBox(height: 32),
 
@@ -119,11 +165,19 @@ class BaseDashboardLayout extends StatelessWidget {
                   children: [
                     Text(
                       role,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF0077B6), fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF0077B6),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     Text(
                       username.isNotEmpty ? username : "Rina Hartati",
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: ConstantColor.textPrimaryColor),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: ConstantColor.textPrimaryColor,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -139,62 +193,97 @@ class BaseDashboardLayout extends StatelessWidget {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                _buildNavItem(Icons.dashboard_outlined, "Dashboard", activeMenu == "Dashboard", () {
-                  if (isMobile) Navigator.pop(context);
-                  if (userController.isManager) {
-                    context.go(RouteName.managerDashPage);
-                  } else {
-                    userController.changeMenu("Dashboard");
-                  }
-                }),
-                _buildNavItem(Icons.business_outlined, "Properties", activeMenu == "Properties", () {
-                  if (isMobile) Navigator.pop(context);
-                  if (userController.isManager) {
-                    context.go(RouteName.managerPropertiesPage);
-                  } else {
-                    userController.changeMenu("Properties");
-                  }
-                }),
-                _buildNavItem(Icons.people_outline, "Tenants", activeMenu == "Tenants", () {
-                  if (isMobile) Navigator.pop(context);
-                  if (userController.isManager) {
-                    context.go(RouteName.managerTenantsPage);
-                  } else {
-                    userController.changeMenu("Tenants");
-                  }
-                }),
-                _buildNavItem(Icons.payment_outlined, "Payments", activeMenu == "Payments", () {
-                  if (isMobile) Navigator.pop(context);
-                  if (userController.isManager) {
-                    context.go(RouteName.managerPaymentsPage);
-                  } else {
-                    userController.changeMenu("Payments");
-                  }
-                }),
-                _buildNavItem(Icons.build_outlined, "Maintenance", activeMenu == "Maintenance", () {
-                  if (isMobile) Navigator.pop(context);
-                  if (userController.isManager) {
-                    context.go(RouteName.managerMaintenancePage);
-                  } else {
-                    userController.changeMenu("Maintenance");
-                  }
-                }),
-                _buildNavItem(Icons.settings_outlined, "Settings", activeMenu == "Settings", () {
-                  if (isMobile) Navigator.pop(context);
-                  if (userController.isManager) {
-                    context.go(RouteName.managerSettingsPage);
-                  } else {
-                    userController.changeMenu("Settings");
-                  }
-                }),
-                _buildNavItem(Icons.help_outline, "Support", activeMenu == "Support", () {
-                  if (isMobile) Navigator.pop(context);
-                  if (userController.isManager) {
-                    context.go(RouteName.managerSupportPage);
-                  } else {
-                    userController.changeMenu("Support");
-                  }
-                }),
+                _buildNavItem(
+                  Icons.dashboard_outlined,
+                  "Dashboard",
+                  activeMenu == "Dashboard",
+                  () {
+                    if (isMobile) Navigator.pop(context);
+                    if (userController.isManager) {
+                      context.go(RouteName.managerDashPage);
+                    } else {
+                      userController.changeMenu("Dashboard");
+                    }
+                  },
+                ),
+                _buildNavItem(
+                  Icons.business_outlined,
+                  "Properties",
+                  activeMenu == "Properties",
+                  () {
+                    if (isMobile) Navigator.pop(context);
+                    if (userController.isManager) {
+                      context.go(RouteName.managerPropertiesPage);
+                    } else {
+                      userController.changeMenu("Properties");
+                    }
+                  },
+                ),
+                _buildNavItem(
+                  Icons.people_outline,
+                  "Tenants",
+                  activeMenu == "Tenants",
+                  () {
+                    if (isMobile) Navigator.pop(context);
+                    if (userController.isManager) {
+                      context.go(RouteName.managerTenantsPage);
+                    } else {
+                      userController.changeMenu("Tenants");
+                    }
+                  },
+                ),
+                _buildNavItem(
+                  Icons.payment_outlined,
+                  "Payments",
+                  activeMenu == "Payments",
+                  () {
+                    if (isMobile) Navigator.pop(context);
+                    if (userController.isManager) {
+                      context.go(RouteName.managerPaymentsPage);
+                    } else {
+                      userController.changeMenu("Payments");
+                    }
+                  },
+                ),
+                _buildNavItem(
+                  Icons.build_outlined,
+                  "Maintenance",
+                  activeMenu == "Maintenance",
+                  () {
+                    if (isMobile) Navigator.pop(context);
+                    if (userController.isManager) {
+                      context.go(RouteName.managerMaintenancePage);
+                    } else {
+                      userController.changeMenu("Maintenance");
+                    }
+                  },
+                ),
+                _buildNavItem(
+                  Icons.settings_outlined,
+                  "Settings",
+                  activeMenu == "Settings",
+                  () {
+                    if (isMobile) Navigator.pop(context);
+                    if (userController.isManager) {
+                      context.go(RouteName.managerSettingsPage);
+                    } else {
+                      userController.changeMenu("Settings");
+                    }
+                  },
+                ),
+                _buildNavItem(
+                  Icons.help_outline,
+                  "Support",
+                  activeMenu == "Support",
+                  () {
+                    if (isMobile) Navigator.pop(context);
+                    if (userController.isManager) {
+                      context.go(RouteName.managerSupportPage);
+                    } else {
+                      userController.changeMenu("Support");
+                    }
+                  },
+                ),
               ],
             ),
           ),
@@ -203,15 +292,31 @@ class BaseDashboardLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem(IconData icon, String title, bool isActive, VoidCallback onTap) {
+  Widget _buildNavItem(
+    IconData icon,
+    String title,
+    bool isActive,
+    VoidCallback onTap,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(color: isActive ? ConstantColor.primaryColor : Colors.transparent, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: isActive ? ConstantColor.primaryColor : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: ListTile(
-        leading: Icon(icon, color: isActive ? Colors.white : ConstantColor.textSecondaryColor, size: 20),
+        leading: Icon(
+          icon,
+          color: isActive ? Colors.white : ConstantColor.textSecondaryColor,
+          size: 20,
+        ),
         title: Text(
           title,
-          style: TextStyle(fontSize: 14, fontWeight: isActive ? FontWeight.bold : FontWeight.w600, color: isActive ? Colors.white : ConstantColor.textSecondaryColor),
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: isActive ? FontWeight.bold : FontWeight.w600,
+            color: isActive ? Colors.white : ConstantColor.textSecondaryColor,
+          ),
         ),
         dense: true,
         onTap: onTap,
@@ -223,7 +328,10 @@ class BaseDashboardLayout extends StatelessWidget {
 
   Widget _buildTopAppBar(BuildContext context, String username, bool isMobile) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isMobile ? 16.0 : 40.0, vertical: 16.0),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 16.0 : 40.0,
+        vertical: 16.0,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0), width: 1)),
@@ -233,20 +341,31 @@ class BaseDashboardLayout extends StatelessWidget {
           if (isMobile) ...[
             Builder(
               builder: (context) => IconButton(
-                icon: const Icon(Icons.menu, color: ConstantColor.textPrimaryColor),
+                icon: const Icon(
+                  Icons.menu,
+                  color: ConstantColor.textPrimaryColor,
+                ),
                 onPressed: () => Scaffold.of(context).openDrawer(),
               ),
             ),
             const SizedBox(width: 8),
             const Text(
               "Biru Laut",
-              style: TextStyle(color: ConstantColor.primaryColor, fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: ConstantColor.primaryColor,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ] else ...[
             // Date
             const Text(
               "20 Oktober 2023",
-              style: TextStyle(color: ConstantColor.textSecondaryColor, fontSize: 14, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: ConstantColor.textSecondaryColor,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
           const Spacer(),
@@ -256,12 +375,22 @@ class BaseDashboardLayout extends StatelessWidget {
             Container(
               width: 320,
               height: 40,
-              decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: TextField(
                 decoration: InputDecoration(
                   hintText: "Cari penyewa atau kamar...",
-                  hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey.shade400, size: 18),
+                  hintStyle: TextStyle(
+                    color: Colors.grey.shade400,
+                    fontSize: 13,
+                  ),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: Colors.grey.shade400,
+                    size: 18,
+                  ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 9),
                 ),
@@ -284,12 +413,20 @@ class BaseDashboardLayout extends StatelessWidget {
               onPressed: () => _logout(context),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xFFE2E8F0)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
               ),
               child: const Text(
                 "Logout",
-                style: TextStyle(color: ConstantColor.textPrimaryColor, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: ConstantColor.textPrimaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
         ],
@@ -305,7 +442,10 @@ class BaseDashboardLayout extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           IconButton(
-            icon: const Icon(Icons.notifications_none_outlined, color: ConstantColor.textSecondaryColor),
+            icon: const Icon(
+              Icons.notifications_none_outlined,
+              color: ConstantColor.textSecondaryColor,
+            ),
             onPressed: () => _showNotificationPopup(context),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -316,10 +456,18 @@ class BaseDashboardLayout extends StatelessWidget {
               right: -4,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.rectangle, borderRadius: BorderRadius.all(Radius.circular(10))),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                ),
                 child: Text(
                   unread > 99 ? '99+' : unread.toString(),
-                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
@@ -330,8 +478,7 @@ class BaseDashboardLayout extends StatelessWidget {
 
   Future<void> _showNotificationPopup(BuildContext anchorContext) async {
     final notificationService = Get.find<GlobalNotificationService>();
-    notificationService.markAllAsRead();
-    notificationService.refreshNow();
+    notificationService.readAll();
 
     final overlay = Overlay.of(anchorContext).context.findRenderObject();
     final button = anchorContext.findRenderObject();
@@ -340,11 +487,16 @@ class BaseDashboardLayout extends StatelessWidget {
     final screenWidth = overlay.size.width;
     const targetWidth = 380.0;
     const panelHeight = 540.0;
-    final panelWidth = screenWidth < targetWidth + 24 ? (screenWidth - 24).clamp(280.0, targetWidth) : targetWidth;
+    final panelWidth = screenWidth < targetWidth + 24
+        ? (screenWidth - 24).clamp(280.0, targetWidth)
+        : targetWidth;
 
     final buttonOffset = button.localToGlobal(Offset.zero, ancestor: overlay);
     final preferredLeft = buttonOffset.dx + button.size.width - panelWidth;
-    final clampedLeft = preferredLeft.clamp(12.0, screenWidth - panelWidth - 12);
+    final clampedLeft = preferredLeft.clamp(
+      12.0,
+      screenWidth - panelWidth - 12,
+    );
     final top = 50.0;
     final right = screenWidth - clampedLeft - panelWidth;
     final bottom = overlay.size.height - top;
@@ -362,13 +514,19 @@ class BaseDashboardLayout extends StatelessWidget {
           enabled: false,
           padding: EdgeInsets.zero,
           height: panelHeight,
-          child: _buildNotificationPopupContent(notificationService: notificationService, panelHeight: panelHeight),
+          child: _buildNotificationPopupContent(
+            notificationService: notificationService,
+            panelHeight: panelHeight,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildNotificationPopupContent({required GlobalNotificationService notificationService, required double panelHeight}) {
+  Widget _buildNotificationPopupContent({
+    required GlobalNotificationService notificationService,
+    required double panelHeight,
+  }) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: Material(
@@ -379,7 +537,10 @@ class BaseDashboardLayout extends StatelessWidget {
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 22,
+                  vertical: 18,
+                ),
                 decoration: const BoxDecoration(
                   border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
                 ),
@@ -387,17 +548,28 @@ class BaseDashboardLayout extends StatelessWidget {
                   children: [
                     const Text(
                       'Notifikasi Terbaru',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: ConstantColor.primaryColor),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: ConstantColor.primaryColor,
+                      ),
                     ),
                     const Spacer(),
                     InkWell(
-                      onTap: notificationService.markAllAsRead,
+                      onTap: notificationService.readAll,
                       borderRadius: BorderRadius.circular(8),
                       child: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 2,
+                        ),
                         child: Text(
                           'Tandai semua dibaca',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: ConstantColor.primaryColor),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: ConstantColor.primaryColor,
+                          ),
                         ),
                       ),
                     ),
@@ -409,25 +581,42 @@ class BaseDashboardLayout extends StatelessWidget {
                   final items = notificationService.notifications;
                   if (items.isEmpty) {
                     return const Center(
-                      child: Text('Belum ada notifikasi.', style: TextStyle(color: ConstantColor.textSecondaryColor)),
+                      child: Text(
+                        'Belum ada notifikasi.',
+                        style: TextStyle(
+                          color: ConstantColor.textSecondaryColor,
+                        ),
+                      ),
                     );
                   }
 
                   return ListView.builder(
                     padding: EdgeInsets.zero,
-                    physics: notificationService.isLoadingMore.value ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
+                    physics: notificationService.isLoadingMore.value
+                        ? const NeverScrollableScrollPhysics()
+                        : const BouncingScrollPhysics(),
                     itemCount: items.length,
                     itemBuilder: (_, index) {
                       final item = items[index];
-                      final title = item.title.isNotEmpty ? item.title : (item.message.isNotEmpty ? item.message : 'Notifikasi baru');
-                      final detail = item.message.isNotEmpty ? item.message : item.type.toUpperCase();
-                      final accentColor = _accentColorForNotificationType(item.type);
+                      final title = item.title.isNotEmpty
+                          ? item.title
+                          : (item.message.isNotEmpty
+                                ? item.message
+                                : 'Notifikasi baru');
+                      final detail = item.message.isNotEmpty
+                          ? item.message
+                          : item.type.toUpperCase();
+                      final accentColor = _accentColorForNotificationType(
+                        item.type,
+                      );
 
                       return Container(
                         width: double.infinity,
                         height: 115,
                         decoration: const BoxDecoration(
-                          border: Border(bottom: BorderSide(color: Color(0xFFE5E7EB))),
+                          border: Border(
+                            bottom: BorderSide(color: Color(0xFFE5E7EB)),
+                          ),
                         ),
                         padding: const EdgeInsets.fromLTRB(22, 14, 18, 12),
                         child: Row(
@@ -436,8 +625,15 @@ class BaseDashboardLayout extends StatelessWidget {
                             Container(
                               width: 40,
                               height: 40,
-                              decoration: BoxDecoration(color: accentColor.withValues(alpha: 0.14), shape: BoxShape.circle),
-                              child: Icon(_iconForNotificationType(item.type), color: accentColor, size: 20),
+                              decoration: BoxDecoration(
+                                color: accentColor.withValues(alpha: 0.14),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                _iconForNotificationType(item.type),
+                                color: accentColor,
+                                size: 20,
+                              ),
                             ),
                             const SizedBox(width: 14),
                             Expanded(
@@ -445,22 +641,36 @@ class BaseDashboardLayout extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Expanded(
                                         child: Text(
                                           title,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(fontSize: 14, height: 1.15, fontWeight: FontWeight.w700, color: ConstantColor.textPrimaryColor),
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            height: 1.15,
+                                            fontWeight: FontWeight.w700,
+                                            color:
+                                                ConstantColor.textPrimaryColor,
+                                          ),
                                         ),
                                       ),
                                       if (!item.isRead)
                                         Padding(
-                                          padding: const EdgeInsets.only(left: 10, top: 2),
+                                          padding: const EdgeInsets.only(
+                                            left: 10,
+                                            top: 2,
+                                          ),
                                           child: Text(
                                             'BARU',
-                                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: accentColor),
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w800,
+                                              color: accentColor,
+                                            ),
                                           ),
                                         ),
                                     ],
@@ -470,14 +680,22 @@ class BaseDashboardLayout extends StatelessWidget {
                                     detail,
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 12, height: 1.35, color: ConstantColor.textPrimaryColor),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      height: 1.35,
+                                      color: ConstantColor.textPrimaryColor,
+                                    ),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
                                     _formatNotificationTime(item.createdAt),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: ConstantColor.textSecondaryColor),
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
+                                      color: ConstantColor.textSecondaryColor,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -500,13 +718,23 @@ class BaseDashboardLayout extends StatelessWidget {
                   return SizedBox(
                     height: 58,
                     child: TextButton(
-                      onPressed: !notificationService.hasNextPage || isLoading ? null : () => notificationService.loadMore(),
+                      onPressed: !notificationService.hasNextPage || isLoading
+                          ? null
+                          : () => notificationService.loadMore(),
                       style: TextButton.styleFrom(
                         foregroundColor: ConstantColor.primaryColor,
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(0),
+                        ),
                       ),
-                      child: Text(isLoading ? 'Memuat...' : 'Lihat Semua Notifikasi', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+                      child: Text(
+                        isLoading ? 'Memuat...' : 'Lihat Semua Notifikasi',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
                   );
                 }),
@@ -577,7 +805,13 @@ class BaseDashboardLayout extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 16.0),
       child: const Center(
-        child: Text("© 2024 Rumah Sewa Biru Laut. Rooted in Comfort.", style: TextStyle(color: ConstantColor.textSecondaryColor, fontSize: 12)),
+        child: Text(
+          "© 2024 Rumah Sewa Biru Laut. Rooted in Comfort.",
+          style: TextStyle(
+            color: ConstantColor.textSecondaryColor,
+            fontSize: 12,
+          ),
+        ),
       ),
     );
   }
@@ -602,7 +836,9 @@ class BaseDashboardLayout extends StatelessWidget {
       userController.clearUserData();
       userController.changeMenu("Dashboard"); // Reset active menu
       if (Get.isRegistered<GlobalNotificationService>()) {
-        await Get.find<GlobalNotificationService>().stopPolling(clearState: true);
+        await Get.find<GlobalNotificationService>().stopPolling(
+          clearState: true,
+        );
       }
 
       if (context.mounted) {
@@ -617,7 +853,9 @@ class BaseDashboardLayout extends StatelessWidget {
       userController.clearUserData();
       userController.changeMenu("Dashboard");
       if (Get.isRegistered<GlobalNotificationService>()) {
-        await Get.find<GlobalNotificationService>().stopPolling(clearState: true);
+        await Get.find<GlobalNotificationService>().stopPolling(
+          clearState: true,
+        );
       }
       if (context.mounted) {
         context.go(RouteName.loginScreen);
