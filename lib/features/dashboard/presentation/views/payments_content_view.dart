@@ -1,59 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/constants/colors.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/controllers/payments_controller.dart';
 
-class PaymentsContentView extends StatelessWidget {
+class PaymentsContentView extends StatefulWidget {
   const PaymentsContentView({super.key});
 
-  static const List<_PaymentEntry> _entries = [
-    _PaymentEntry(
-      no: '01',
-      initials: 'BP',
-      tenantName: 'Budi Pratama',
-      unit: 'Lantai 2 - A12',
-      month: 'Oktober 2023',
-      amount: 'Rp 2.500.000',
-      date: '12 Okt 2023',
-      status: _PaymentStatus.pending,
-      avatarColor: Color(0xFFDCEEFE),
-      avatarTextColor: Color(0xFF0077B6),
-    ),
-    _PaymentEntry(
-      no: '02',
-      initials: 'SL',
-      tenantName: 'Siti Lestari',
-      unit: 'Lantai 1 - B05',
-      month: 'Oktober 2023',
-      amount: 'Rp 1.850.000',
-      date: '10 Okt 2023',
-      status: _PaymentStatus.verified,
-      avatarColor: Color(0xFFE5E7EB),
-      avatarTextColor: Color(0xFF6B7280),
-    ),
-    _PaymentEntry(
-      no: '03',
-      initials: 'AM',
-      tenantName: 'Andi Mahendra',
-      unit: 'Lantai 3 - C01',
-      month: 'Oktober 2023',
-      amount: 'Rp 2.100.000',
-      date: '09 Okt 2023',
-      status: _PaymentStatus.rejected,
-      avatarColor: Color(0xFFFEE2E2),
-      avatarTextColor: Color(0xFFDC2626),
-    ),
-    _PaymentEntry(
-      no: '04',
-      initials: 'RW',
-      tenantName: 'Rian Wijaya',
-      unit: 'Lantai 2 - A08',
-      month: 'Oktober 2023',
-      amount: 'Rp 2.500.000',
-      date: '09 Okt 2023',
-      status: _PaymentStatus.pending,
-      avatarColor: Color(0xFFDCEEFE),
-      avatarTextColor: Color(0xFF0077B6),
-    ),
-  ];
+  @override
+  State<PaymentsContentView> createState() => _PaymentsContentViewState();
+}
+
+class _PaymentsContentViewState extends State<PaymentsContentView> {
+  late PaymentsController _controller;
+  PaymentFilterStatus _selectedFilter = PaymentFilterStatus.all;
+
+  @override
+  void initState() {
+    super.initState();
+    if (Get.isRegistered<PaymentsController>()) {
+      _controller = Get.find<PaymentsController>();
+    } else {
+      _controller = Get.put(PaymentsController());
+    }
+  }
+
+  void _reloadPayments() {
+    _controller.fetchPayments(status: _selectedFilter);
+  }
+
+  void _onFilterSelected(PaymentFilterStatus filter) {
+    if (_selectedFilter == filter) {
+      return;
+    }
+    setState(() {
+      _selectedFilter = filter;
+    });
+    _controller.fetchPayments(status: filter);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -127,37 +110,6 @@ class PaymentsContentView extends StatelessWidget {
           );
   }
 
-  Widget _exportButton({required bool isCompact}) {
-    return Container(
-      height: isCompact ? 42 : 46,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.file_download_outlined,
-            size: 18,
-            color: Color(0xFF111827),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Ekspor Data',
-            style: TextStyle(
-              fontSize: isCompact ? 13 : 15,
-              color: const Color(0xFF111827),
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildPaymentTableCard(BuildContext context, bool isMobile) {
     return Container(
       padding: EdgeInsets.all(isMobile ? 14 : 18),
@@ -170,17 +122,80 @@ class PaymentsContentView extends StatelessWidget {
         children: [
           _buildFilterBar(isMobile),
           const SizedBox(height: 14),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFE7EDF5)),
+          Obx(
+            () => Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFFE7EDF5)),
+              ),
+              child: _buildPaymentContent(isMobile),
             ),
-            child: isMobile ? _buildMobileList() : _buildDesktopTable(),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildPaymentContent(bool isMobile) {
+    if (_controller.isLoading.value) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 28),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_controller.errorMessage.value.isNotEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Gagal memuat data pembayaran.',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFFB91C1C),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              _controller.errorMessage.value,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF6B7280),
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: _reloadPayments,
+              child: const Text('Muat Ulang'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final entries = _controller.payments;
+    if (entries.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 28),
+        child: Center(
+          child: Text(
+            'Belum ada pembayaran yang perlu diverifikasi.',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return isMobile ? _buildMobileList(entries) : _buildDesktopTable(entries);
   }
 
   Widget _buildFilterBar(bool isMobile) {
@@ -197,11 +212,35 @@ class PaymentsContentView extends StatelessWidget {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: const [
-                    _FilterChip(label: 'Semua Status', isSelected: true),
-                    _FilterChip(label: 'Menunggu Verifikasi'),
-                    _FilterChip(label: 'Terverifikasi'),
-                    _FilterChip(label: 'Ditolak'),
+                  children: [
+                    _FilterChip(
+                      label: 'Semua Status',
+                      isSelected: _selectedFilter == PaymentFilterStatus.all,
+                      onTap: () => _onFilterSelected(PaymentFilterStatus.all),
+                    ),
+                    _FilterChip(
+                      label: 'Menunggu Verifikasi',
+                      isSelected:
+                          _selectedFilter ==
+                          PaymentFilterStatus.pendingVerification,
+                      onTap: () => _onFilterSelected(
+                        PaymentFilterStatus.pendingVerification,
+                      ),
+                    ),
+                    _FilterChip(
+                      label: 'Terverifikasi',
+                      isSelected:
+                          _selectedFilter == PaymentFilterStatus.verified,
+                      onTap: () =>
+                          _onFilterSelected(PaymentFilterStatus.verified),
+                    ),
+                    _FilterChip(
+                      label: 'Ditolak',
+                      isSelected:
+                          _selectedFilter == PaymentFilterStatus.rejected,
+                      onTap: () =>
+                          _onFilterSelected(PaymentFilterStatus.rejected),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -212,13 +251,33 @@ class PaymentsContentView extends StatelessWidget {
             )
           : Row(
               children: [
-                const _FilterChip(label: 'Semua Status', isSelected: true),
+                _FilterChip(
+                  label: 'Semua Status',
+                  isSelected: _selectedFilter == PaymentFilterStatus.all,
+                  onTap: () => _onFilterSelected(PaymentFilterStatus.all),
+                ),
                 const SizedBox(width: 8),
-                const _FilterChip(label: 'Menunggu Verifikasi'),
+                _FilterChip(
+                  label: 'Menunggu Verifikasi',
+                  isSelected:
+                      _selectedFilter ==
+                      PaymentFilterStatus.pendingVerification,
+                  onTap: () => _onFilterSelected(
+                    PaymentFilterStatus.pendingVerification,
+                  ),
+                ),
                 const SizedBox(width: 8),
-                const _FilterChip(label: 'Terverifikasi'),
+                _FilterChip(
+                  label: 'Terverifikasi',
+                  isSelected: _selectedFilter == PaymentFilterStatus.verified,
+                  onTap: () => _onFilterSelected(PaymentFilterStatus.verified),
+                ),
                 const SizedBox(width: 8),
-                const _FilterChip(label: 'Ditolak'),
+                _FilterChip(
+                  label: 'Ditolak',
+                  isSelected: _selectedFilter == PaymentFilterStatus.rejected,
+                  onTap: () => _onFilterSelected(PaymentFilterStatus.rejected),
+                ),
                 const SizedBox(width: 12),
                 Expanded(child: _searchField()),
                 const SizedBox(width: 12),
@@ -283,7 +342,7 @@ class PaymentsContentView extends StatelessWidget {
     );
   }
 
-  Widget _buildDesktopTable() {
+  Widget _buildDesktopTable(List<PaymentVerificationItem> entries) {
     return Column(
       children: [
         Container(
@@ -309,13 +368,13 @@ class PaymentsContentView extends StatelessWidget {
             ],
           ),
         ),
-        for (final entry in _entries) _desktopRow(entry),
-        _tableFooter(),
+        for (final entry in entries) _desktopRow(entry),
+        _tableFooter(entries.length),
       ],
     );
   }
 
-  Widget _desktopRow(_PaymentEntry entry) {
+  Widget _desktopRow(PaymentVerificationItem entry) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: const BoxDecoration(
@@ -330,12 +389,12 @@ class PaymentsContentView extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 15,
-                  backgroundColor: entry.avatarColor,
+                  backgroundColor: _avatarBackground(entry.avatarColorKey),
                   child: Text(
                     entry.initials,
                     style: TextStyle(
                       fontSize: 11,
-                      color: entry.avatarTextColor,
+                      color: _avatarText(entry.avatarColorKey),
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -386,7 +445,7 @@ class PaymentsContentView extends StatelessWidget {
     );
   }
 
-  Widget _tableFooter() {
+  Widget _tableFooter(int totalEntries) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: const BoxDecoration(
@@ -395,8 +454,8 @@ class PaymentsContentView extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Text(
-            'Menampilkan 4 dari 28 entri',
+          Text(
+            'Menampilkan $totalEntries entri',
             style: TextStyle(
               fontSize: 13,
               color: Color(0xFF6B7280),
@@ -404,24 +463,20 @@ class PaymentsContentView extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          _circlePageButton(icon: Icons.chevron_left, isActive: false),
-          const SizedBox(width: 8),
-          _circlePageButton(label: '1', isActive: true),
-          const SizedBox(width: 8),
-          _circlePageButton(label: '2', isActive: false),
-          const SizedBox(width: 8),
-          _circlePageButton(label: '3', isActive: false),
-          const SizedBox(width: 8),
-          _circlePageButton(icon: Icons.chevron_right, isActive: false),
+          TextButton.icon(
+            onPressed: _reloadPayments,
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Refresh'),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildMobileList() {
+  Widget _buildMobileList(List<PaymentVerificationItem> entries) {
     return Column(
       children: [
-        for (final entry in _entries)
+        for (final entry in entries)
           Container(
             padding: const EdgeInsets.all(14),
             decoration: const BoxDecoration(
@@ -434,12 +489,12 @@ class PaymentsContentView extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 16,
-                      backgroundColor: entry.avatarColor,
+                      backgroundColor: _avatarBackground(entry.avatarColorKey),
                       child: Text(
                         entry.initials,
                         style: TextStyle(
                           fontSize: 11,
-                          color: entry.avatarTextColor,
+                          color: _avatarText(entry.avatarColorKey),
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -485,26 +540,53 @@ class PaymentsContentView extends StatelessWidget {
               ],
             ),
           ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Menampilkan 4 dari 28 entri',
-              style: TextStyle(
-                fontSize: 13,
-                color: Color(0xFF6B7280),
-                fontWeight: FontWeight.w500,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Menampilkan ${entries.length} entri',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF6B7280),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
-            ),
+              TextButton(
+                onPressed: _reloadPayments,
+                child: const Text('Refresh'),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  Widget _actionWidget(_PaymentStatus status) {
-    if (status == _PaymentStatus.pending) {
+  Color _avatarBackground(int colorKey) {
+    if (colorKey == 1) {
+      return const Color(0xFFDCEEFE);
+    }
+    if (colorKey == 2) {
+      return const Color(0xFFE8EEF5);
+    }
+    return const Color(0xFFE5E7EB);
+  }
+
+  Color _avatarText(int colorKey) {
+    if (colorKey == 1) {
+      return const Color(0xFF0077B6);
+    }
+    if (colorKey == 2) {
+      return const Color(0xFF374151);
+    }
+    return const Color(0xFF6B7280);
+  }
+
+  Widget _actionWidget(PaymentVerificationStatus status) {
+    if (status == PaymentVerificationStatus.pending) {
       return Wrap(
         spacing: 8,
         runSpacing: 8,
@@ -526,7 +608,7 @@ class PaymentsContentView extends StatelessWidget {
       );
     }
 
-    if (status == _PaymentStatus.verified) {
+    if (status == PaymentVerificationStatus.verified) {
       return const Text(
         'Detail',
         style: TextStyle(
@@ -574,26 +656,26 @@ class PaymentsContentView extends StatelessWidget {
     );
   }
 
-  Widget _statusPill(_PaymentStatus status) {
+  Widget _statusPill(PaymentVerificationStatus status) {
     final Color backgroundColor;
     final Color textColor;
     final String label;
     final IconData icon;
 
     switch (status) {
-      case _PaymentStatus.pending:
+      case PaymentVerificationStatus.pending:
         backgroundColor = const Color(0xFFFDE7D2);
         textColor = const Color(0xFF9A5800);
         label = 'MENUNGGU VERIFIKASI';
         icon = Icons.circle;
         break;
-      case _PaymentStatus.verified:
+      case PaymentVerificationStatus.verified:
         backgroundColor = const Color(0xFFDCFCE7);
         textColor = const Color(0xFF15803D);
         label = 'TERVERIFIKASI';
         icon = Icons.check_circle_outline;
         break;
-      case _PaymentStatus.rejected:
+      case PaymentVerificationStatus.rejected:
         backgroundColor = const Color(0xFFFEE2E2);
         textColor = const Color(0xFFDC2626);
         label = 'DITOLAK';
@@ -612,7 +694,7 @@ class PaymentsContentView extends StatelessWidget {
         children: [
           Icon(
             icon,
-            size: status == _PaymentStatus.pending ? 7 : 14,
+            size: status == PaymentVerificationStatus.pending ? 7 : 14,
             color: textColor,
           ),
           const SizedBox(width: 6),
@@ -629,197 +711,40 @@ class PaymentsContentView extends StatelessWidget {
       ),
     );
   }
-
-  Widget _circlePageButton({
-    String? label,
-    IconData? icon,
-    required bool isActive,
-  }) {
-    return Container(
-      width: 34,
-      height: 34,
-      decoration: BoxDecoration(
-        color: isActive ? ConstantColor.primaryColor : Colors.white,
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: isActive
-              ? ConstantColor.primaryColor
-              : const Color(0xFFE5E7EB),
-        ),
-      ),
-      child: Icon(
-        icon,
-        size: 17,
-        color: isActive ? Colors.white : const Color(0xFF6B7280),
-      ),
-    )._withLabel(label, isActive);
-  }
-
-  Widget _buildBottomSection(BuildContext context, bool isMobile) {
-    if (isMobile) {
-      return Column(
-        children: [
-          _statisticCard(isMobile: true),
-          const SizedBox(height: 14),
-          _actionNeededCard(isMobile: true),
-        ],
-      );
-    }
-
-    return Row(
-      children: [
-        Expanded(flex: 2, child: _statisticCard(isMobile: false)),
-        const SizedBox(width: 18),
-        Expanded(child: _actionNeededCard(isMobile: false)),
-      ],
-    );
-  }
-
-  Widget _statisticCard({required bool isMobile}) {
-    return Container(
-      padding: EdgeInsets.all(isMobile ? 18 : 24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0B679B), Color(0xFF005D90)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: 8,
-            bottom: 2,
-            child: Icon(
-              Icons.sailing_outlined,
-              size: isMobile ? 70 : 92,
-              color: Colors.white.withValues(alpha: 0.18),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Statistik Pembayaran Bulan Ini',
-                style: TextStyle(
-                  fontSize: 24,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 26,
-                runSpacing: 10,
-                children: const [
-                  _StatItem(label: 'TERKUMPUL', value: 'Rp 142.50M'),
-                  _StatItem(label: 'MENUNGGU', value: 'Rp 12.20M'),
-                  _StatItem(label: 'TARGET', value: 'Rp 160.00M'),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _actionNeededCard({required bool isMobile}) {
-    return Container(
-      padding: EdgeInsets.all(isMobile ? 18 : 24),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F9FD),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE5EBF4)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE8EAF0),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.priority_high,
-                  size: 18,
-                  color: Color(0xFF9A5800),
-                ),
-              ),
-              const SizedBox(width: 10),
-              const Text(
-                'Aksi Diperlukan',
-                style: TextStyle(
-                  fontSize: 19,
-                  color: Color(0xFF1F2937),
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          RichText(
-            text: const TextSpan(
-              style: TextStyle(
-                height: 1.6,
-                fontSize: 16,
-                color: Color(0xFF4B5563),
-                fontWeight: FontWeight.w500,
-              ),
-              children: [
-                TextSpan(text: 'Terdapat '),
-                TextSpan(
-                  text: '12 pembayaran',
-                  style: TextStyle(
-                    color: Color(0xFF005D90),
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                TextSpan(
-                  text:
-                      ' yang belum diverifikasi selama lebih dari 24 jam. Segera validasi untuk menjaga kelancaran arus kas.',
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _FilterChip extends StatelessWidget {
   final String label;
   final bool isSelected;
+  final VoidCallback? onTap;
 
-  const _FilterChip({required this.label, this.isSelected = false});
+  const _FilterChip({required this.label, this.isSelected = false, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: isSelected ? ConstantColor.primaryColor : Colors.white,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: isSelected
-              ? ConstantColor.primaryColor
-              : const Color(0xFFE5E7EB),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: Container(
+        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? ConstantColor.primaryColor : Colors.white,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: isSelected
+                ? ConstantColor.primaryColor
+                : const Color(0xFFE5E7EB),
+          ),
         ),
-      ),
-      child: Center(
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            color: isSelected ? Colors.white : const Color(0xFF4B5563),
-            fontWeight: FontWeight.w700,
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: isSelected ? Colors.white : const Color(0xFF4B5563),
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ),
@@ -882,89 +807,6 @@ class _TableTextCell extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
       ),
-    );
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _StatItem({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.white.withValues(alpha: 0.8),
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.45,
-          ),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 32,
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-enum _PaymentStatus { pending, verified, rejected }
-
-class _PaymentEntry {
-  final String no;
-  final String initials;
-  final String tenantName;
-  final String unit;
-  final String month;
-  final String amount;
-  final String date;
-  final _PaymentStatus status;
-  final Color avatarColor;
-  final Color avatarTextColor;
-
-  const _PaymentEntry({
-    required this.no,
-    required this.initials,
-    required this.tenantName,
-    required this.unit,
-    required this.month,
-    required this.amount,
-    required this.date,
-    required this.status,
-    required this.avatarColor,
-    required this.avatarTextColor,
-  });
-}
-
-extension on Widget {
-  Widget _withLabel(String? label, bool isActive) {
-    if (label == null) return this;
-
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        this,
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            color: isActive ? Colors.white : const Color(0xFF6B7280),
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
     );
   }
 }
