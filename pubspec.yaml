@@ -43,6 +43,7 @@ dependencies:
   flutter_screenutil: ^5.9.3
   google_fonts: ^4.0.3
   shimmer: ^3.0.0
+  flutter_local_notifications: ^19.4.0
 
 dev_dependencies:
   flutter_test:
