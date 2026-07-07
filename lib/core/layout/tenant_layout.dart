@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:rumah_sewa_biru_laut_fe/core/constants/colors.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/constants/tenant_colors.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/routes/route_name.dart';
+import 'package:rumah_sewa_biru_laut_fe/core/services/global_notification_service.dart';
 import 'package:go_router/go_router.dart';
 
 class TenantSidebar extends StatelessWidget {
@@ -24,7 +27,9 @@ class TenantSidebar extends StatelessWidget {
       width: 256,
       decoration: BoxDecoration(
         color: TenantColors.background,
-        border: Border(right: BorderSide(color: Colors.grey.shade300.withOpacity(0.6))),
+        border: Border(
+          right: BorderSide(color: Colors.grey.shade300.withOpacity(0.6)),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,8 +86,14 @@ class TenantSidebar extends StatelessWidget {
                     onTap: onMaintenanceTap,
                   ),
                   const Spacer(),
-                  const _SidebarItem(icon: Icons.settings_outlined, label: 'Settings'),
-                  const _SidebarItem(icon: Icons.help_outline, label: 'Support'),
+                  const _SidebarItem(
+                    icon: Icons.settings_outlined,
+                    label: 'Settings',
+                  ),
+                  const _SidebarItem(
+                    icon: Icons.help_outline,
+                    label: 'Support',
+                  ),
                 ],
               ),
             ),
@@ -99,26 +110,41 @@ class _SidebarItem extends StatelessWidget {
   final bool active;
   final VoidCallback? onTap;
 
-  const _SidebarItem({required this.icon, required this.label, this.active = false, this.onTap});
+  const _SidebarItem({
+    required this.icon,
+    required this.label,
+    this.active = false,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
-        color: active ? const Color(0xFF005D90).withOpacity(0.10) : Colors.transparent,
+        color: active
+            ? const Color(0xFF005D90).withOpacity(0.10)
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(16),
       ),
       child: ListTile(
         dense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-        leading: Icon(icon, size: 20, color: active ? TenantColors.primary : TenantColors.onSurfaceVariant),
-        title: Text(label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: active ? FontWeight.w800 : FontWeight.w600,
-              color: active ? TenantColors.primary : TenantColors.onSurfaceVariant,
-            )),
+        leading: Icon(
+          icon,
+          size: 20,
+          color: active ? TenantColors.primary : TenantColors.onSurfaceVariant,
+        ),
+        title: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+            color: active
+                ? TenantColors.primary
+                : TenantColors.onSurfaceVariant,
+          ),
+        ),
         onTap: onTap,
       ),
     );
@@ -128,19 +154,28 @@ class _SidebarItem extends StatelessWidget {
 class TenantTopBar extends StatelessWidget {
   final String displayName;
   final double fontScale;
+  final VoidCallback? onMenuTap;
 
-  const TenantTopBar({super.key, required this.displayName, this.fontScale = 1.0});
+  const TenantTopBar({
+    super.key,
+    required this.displayName,
+    this.fontScale = 1.0,
+    this.onMenuTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     double _fontScale(_) => fontScale;
+    final isNarrow = MediaQuery.of(context).size.width < 900;
 
     return Container(
       height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: TenantColors.background,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade300.withOpacity(0.5))),
+        border: Border(
+          bottom: BorderSide(color: Colors.grey.shade300.withOpacity(0.5)),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -149,58 +184,276 @@ class TenantTopBar extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Text(
-            'Rumah Sewa Biru Laut',
-            style: TextStyle(
-              fontFamily: 'Manrope',
-              fontSize: 18 * _fontScale(context),
-              fontWeight: FontWeight.w800,
-              color: TenantColors.primary,
-            ),
-          ),
-          const Spacer(),
-          Container(
-            width: 256,
-            height: 40,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: Colors.grey.shade300.withOpacity(0.5)),
-            ),
-            child: Row(
+      child: isNarrow
+          ? Row(
               children: [
-                Icon(Icons.search, size: 18, color: Colors.grey.shade500),
-                const SizedBox(width: 10),
+                if (onMenuTap != null)
+                  IconButton(
+                    onPressed: onMenuTap,
+                    icon: const Icon(Icons.menu),
+                    color: TenantColors.onSurfaceVariant,
+                  ),
+                const SizedBox(width: 8),
                 Expanded(
+                  child: Text(
+                    'Biru Laut',
+                    style: TextStyle(
+                      fontFamily: 'Manrope',
+                      fontSize: 16 * _fontScale(context),
+                      fontWeight: FontWeight.w800,
+                      color: TenantColors.primary,
+                    ),
+                  ),
+                ),
+                _buildNotificationButton(context),
+                IconButton(
+                  icon: Icon(Icons.logout, color: Colors.red.shade700),
+                  onPressed: () => _logout(context),
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                const Text(
+                  "20 Oktober 2023",
+                  style: TextStyle(
+                    color: ConstantColor.textSecondaryColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  width: 320,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   child: TextField(
-                    decoration: const InputDecoration.collapsed(hintText: ''),
+                    decoration: InputDecoration(
+                      hintText: "Cari penyewa atau kamar...",
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 13,
+                      ),
+                      prefixIcon: Icon(
+                        Icons.search,
+                        color: Colors.grey.shade400,
+                        size: 18,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 9),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 24),
+                _buildNotificationButton(context),
+                const SizedBox(width: 24),
+                OutlinedButton(
+                  onPressed: () => _logout(context),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                  ),
+                  child: const Text(
+                    "Logout",
+                    style: TextStyle(
+                      color: ConstantColor.textPrimaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(width: 18),
-          IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none), color: TenantColors.onSurfaceVariant),
-          const SizedBox(width: 10),
-          Text('Penyewa Aktif', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1, color: TenantColors.onBackground)),
-          const SizedBox(width: 12),
-          const CircleAvatar(radius: 20, backgroundColor: Color(0xFFD1E4FF), child: Icon(Icons.person, size: 20, color: TenantColors.primary)),
-          const SizedBox(width: 10),
-          TextButton(
-            onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.clear();
-              // ignore: use_build_context_synchronously
-              GoRouter.of(context).go(RouteName.loginScreen);
-            },
-            child: const Text('Logout', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: TenantColors.onSurfaceVariant)),
-          ),
-        ],
-      ),
     );
+  }
+
+  Widget _buildNotificationButton(BuildContext context) {
+    final notificationService = Get.find<GlobalNotificationService>();
+    return Obx(() {
+      final unread = notificationService.unreadCount.value;
+      return Stack(
+        clipBehavior: Clip.none,
+        children: [
+          IconButton(
+            onPressed: () => _showNotificationSheet(context),
+            icon: const Icon(Icons.notifications_none_outlined),
+            color: ConstantColor.textSecondaryColor,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+          if (unread > 0)
+            Positioned(
+              top: -2,
+              right: -4,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.rectangle,
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                ),
+                child: Text(
+                  unread > 99 ? '99+' : unread.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      );
+    });
+  }
+
+  void _showNotificationSheet(BuildContext context) {
+    final notificationService = Get.find<GlobalNotificationService>();
+    notificationService.readAll();
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) {
+        return SafeArea(
+          child: SizedBox(
+            height: 420,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Notifikasi',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: TenantColors.onBackground,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: Obx(() {
+                      final items = notificationService.notifications;
+                      if (items.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            'Belum ada notifikasi.',
+                            style: TextStyle(
+                              color: TenantColors.onSurfaceVariant,
+                            ),
+                          ),
+                        );
+                      }
+
+                      return ListView.separated(
+                        itemCount: items.length,
+                        separatorBuilder: (context, index) =>
+                            const Divider(height: 1, thickness: 0.5),
+                        itemBuilder: (_, index) {
+                          final item = items[index];
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                            ),
+                            leading: Icon(
+                              _iconForNotificationType(item.type),
+                              color: TenantColors.primary,
+                            ),
+                            title: Text(
+                              item.title.isNotEmpty
+                                  ? item.title
+                                  : (item.message.isNotEmpty
+                                        ? item.message
+                                        : 'Notifikasi baru'),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Text(
+                              item.message.isNotEmpty
+                                  ? item.message
+                                  : item.type.toUpperCase(),
+                              style: const TextStyle(fontSize: 11),
+                            ),
+                            trailing: Text(
+                              item.isRead ? 'Read' : 'Unread',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: item.isRead
+                                    ? TenantColors.onSurfaceVariant
+                                    : Colors.red.shade600,
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 10),
+                  Obx(() {
+                    if (!notificationService.hasNextPage) {
+                      return const SizedBox.shrink();
+                    }
+                    return SizedBox(
+                      width: double.infinity,
+                      child: TextButton(
+                        onPressed: notificationService.isLoadingMore.value
+                            ? null
+                            : () => notificationService.loadMore(),
+                        child: Text(
+                          notificationService.isLoadingMore.value
+                              ? 'Memuat...'
+                              : 'Muat lebih banyak',
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  IconData _iconForNotificationType(String type) {
+    switch (type.trim().toLowerCase()) {
+      case 'upload':
+        return Icons.file_upload_outlined;
+      case 'verifikasi':
+        return Icons.verified_outlined;
+      case 'reject':
+        return Icons.cancel_outlined;
+      default:
+        return Icons.notifications_outlined;
+    }
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    if (Get.isRegistered<GlobalNotificationService>()) {
+      await Get.find<GlobalNotificationService>().stopPolling(clearState: true);
+    }
+    if (context.mounted) {
+      GoRouter.of(context).go(RouteName.loginScreen);
+    }
   }
 }
 

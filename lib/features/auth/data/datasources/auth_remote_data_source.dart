@@ -45,7 +45,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> logout(String jwtToken) async {
     try {
-      print("JWT Token: $jwtToken");
       final response = await dio.post('/api/logout', options: Options(headers: {'Authorization': 'Bearer $jwtToken'}));
 
       if (response.statusCode == 200 || response.statusCode == 201) {

@@ -5,6 +5,7 @@ import 'package:rumah_sewa_biru_laut_fe/features/auth/domain/entities/user.dart'
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/routes/route_name.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/controllers/user_controller.dart';
+import 'package:rumah_sewa_biru_laut_fe/core/services/global_notification_service.dart';
 import '../../domain/usecases/login_usecase.dart';
 
 class LoginController extends GetxController {
@@ -109,6 +110,9 @@ class LoginController extends GetxController {
 
         final userController = Get.find<UserController>();
         await userController.loadUserData();
+        if (Get.isRegistered<GlobalNotificationService>()) {
+          await Get.find<GlobalNotificationService>().startPolling();
+        }
 
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
