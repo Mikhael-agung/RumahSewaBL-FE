@@ -2,15 +2,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:rumah_sewa_biru_laut_fe/core/constants/colors.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/controllers/payments_controller.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/views/widgets/payments_ui_components.dart';
 import 'package:rumah_sewa_biru_laut_fe/utils/helpers/web_network_image_embed_stub.dart'
     if (dart.library.html) 'package:rumah_sewa_biru_laut_fe/utils/helpers/web_network_image_embed_web.dart'
     as web_network_image_embed;
 import 'package:rumah_sewa_biru_laut_fe/utils/helpers/web_pdf_embed_stub.dart'
     if (dart.library.html) 'package:rumah_sewa_biru_laut_fe/utils/helpers/web_pdf_embed_web.dart'
     as web_pdf_embed;
-import 'package:rumah_sewa_biru_laut_fe/utils/helpers/currency_format.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class PaymentsContentView extends StatefulWidget {
@@ -42,6 +41,7 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
     if (_selectedFilter == filter) {
       return;
     }
+
     setState(() {
       _selectedFilter = filter;
     });
@@ -87,10 +87,10 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
       );
       return;
     }
-    final normalizedProofUrl = _normalizeProofUrl(proofUrl);
 
+    final normalizedProofUrl = _normalizeProofUrl(proofUrl);
     final extension = _proofExtension(entry);
-    print('Proof file extension: $extension, URL: $normalizedProofUrl');
+
     if (extension == 'pdf') {
       if (kIsWeb) {
         showDialog(
@@ -175,74 +175,16 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isMobile = MediaQuery.of(context).size.width < 800;
+    final isMobile = MediaQuery.of(context).size.width < 800;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildHeader(context, isMobile),
+        PaymentsHeaderSection(isMobile: isMobile),
         SizedBox(height: isMobile ? 20 : 24),
         _buildPaymentTableCard(context, isMobile),
       ],
     );
-  }
-
-  Widget _buildHeader(BuildContext context, bool isMobile) {
-    return isMobile
-        ? Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Verifikasi Pembayaran',
-                style: TextStyle(
-                  fontSize: isMobile ? 26 : 34,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF111827),
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Periksa dan validasi bukti transfer pembayaran sewa dari para penyewa unit Rumah Sewa Biru Laut secara akurat.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF6B7280),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              // const SizedBox(height: 14),
-              // _exportButton(isCompact: true),
-            ],
-          )
-        : Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Verifikasi Pembayaran',
-                      style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF111827),
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Periksa dan validasi bukti transfer pembayaran sewa dari para penyewa unit Rumah Sewa Biru Laut secara akurat.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF6B7280),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
   }
 
   Widget _buildPaymentTableCard(BuildContext context, bool isMobile) {
@@ -255,7 +197,11 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
       ),
       child: Column(
         children: [
-          _buildFilterBar(isMobile),
+          PaymentsFilterBar(
+            isMobile: isMobile,
+            selectedFilter: _selectedFilter,
+            onFilterSelected: _onFilterSelected,
+          ),
           const SizedBox(height: 14),
           Obx(
             () => Container(
@@ -264,7 +210,7 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: const Color(0xFFE7EDF5)),
               ),
-              child: _buildPaymentContent(isMobile),
+              child: _buildPaymentContent(context, isMobile),
             ),
           ),
         ],
@@ -272,7 +218,7 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
     );
   }
 
-  Widget _buildPaymentContent(bool isMobile) {
+  Widget _buildPaymentContent(BuildContext context, bool isMobile) {
     if (_controller.isLoading.value) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 28),
@@ -330,609 +276,12 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
       );
     }
 
-    return isMobile ? _buildMobileList(entries) : _buildDesktopTable(entries);
-  }
-
-  Widget _buildFilterBar(bool isMobile) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F4FA),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: isMobile
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _FilterChip(
-                      label: 'Semua Status',
-                      isSelected: _selectedFilter == PaymentFilterStatus.all,
-                      onTap: () => _onFilterSelected(PaymentFilterStatus.all),
-                    ),
-                    _FilterChip(
-                      label: 'Menunggu Verifikasi',
-                      isSelected:
-                          _selectedFilter ==
-                          PaymentFilterStatus.pendingVerification,
-                      onTap: () => _onFilterSelected(
-                        PaymentFilterStatus.pendingVerification,
-                      ),
-                    ),
-                    _FilterChip(
-                      label: 'Terverifikasi',
-                      isSelected:
-                          _selectedFilter == PaymentFilterStatus.verified,
-                      onTap: () =>
-                          _onFilterSelected(PaymentFilterStatus.verified),
-                    ),
-                    _FilterChip(
-                      label: 'Ditolak',
-                      isSelected:
-                          _selectedFilter == PaymentFilterStatus.rejected,
-                      onTap: () =>
-                          _onFilterSelected(PaymentFilterStatus.rejected),
-                    ),
-                  ],
-                ),
-              ],
-            )
-          : Row(
-              children: [
-                _FilterChip(
-                  label: 'Semua Status',
-                  isSelected: _selectedFilter == PaymentFilterStatus.all,
-                  onTap: () => _onFilterSelected(PaymentFilterStatus.all),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: 'Menunggu Verifikasi',
-                  isSelected:
-                      _selectedFilter ==
-                      PaymentFilterStatus.pendingVerification,
-                  onTap: () => _onFilterSelected(
-                    PaymentFilterStatus.pendingVerification,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: 'Terverifikasi',
-                  isSelected: _selectedFilter == PaymentFilterStatus.verified,
-                  onTap: () => _onFilterSelected(PaymentFilterStatus.verified),
-                ),
-                const SizedBox(width: 8),
-                _FilterChip(
-                  label: 'Ditolak',
-                  isSelected: _selectedFilter == PaymentFilterStatus.rejected,
-                  onTap: () => _onFilterSelected(PaymentFilterStatus.rejected),
-                ),
-              ],
-            ),
-    );
-  }
-
-  Widget _searchField() {
-    return Container(
-      height: 44,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8EFF9),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: const Row(
-        children: [
-          Icon(Icons.search, color: Color(0xFF6B7280), size: 20),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Cari nama penyewa atau nomor unit...',
-              style: TextStyle(
-                fontSize: 14,
-                color: Color(0xFF7A889C),
-                fontWeight: FontWeight.w500,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _monthButton() {
-    return Container(
-      height: 44,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'Bulan Ini (Okt)',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF111827),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(width: 10),
-          Icon(Icons.keyboard_arrow_down, color: Color(0xFF6B7280), size: 20),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDesktopTable(List<PaymentVerificationItem> entries) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          decoration: const BoxDecoration(
-            color: Color(0xFFF9FAFB),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-          ),
-          child: const Row(
-            children: [
-              _TableHeaderCell(text: 'NO', flex: 1),
-              _TableHeaderCell(text: 'PENYEWA', flex: 2),
-              _TableHeaderCell(text: 'UNIT/KAMAR', flex: 3),
-              _TableHeaderCell(text: 'BULAN', flex: 3),
-              _TableHeaderCell(text: 'JUMLAH', flex: 3),
-              _TableHeaderCell(text: 'TANGGAL', flex: 2),
-              _TableHeaderCell(text: 'STATUS', flex: 4),
-              _TableHeaderCell(
-                text: 'AKSI',
-                flex: 4,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-        for (final entry in entries) _desktopRow(entry),
-        _tableFooter(entries.length),
-      ],
-    );
-  }
-
-  Widget _desktopRow(PaymentVerificationItem entry) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: Color(0xFFEFF3F8))),
-      ),
-      child: Row(
-        children: [
-          _TableTextCell(text: entry.no, flex: 1),
-          Expanded(
-            flex: 2,
-            child: Text(
-              entry.tenantName,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Color(0xFF111827),
-                fontWeight: FontWeight.w700,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          _TableTextCell(text: entry.unit, flex: 3),
-          _TableTextCell(text: entry.month, flex: 3),
-          _TableTextCell(
-            text: currencyIdr.format(
-              int.tryParse(entry.amount.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0,
-            ),
-            flex: 3,
-            textStyle: const TextStyle(
-              fontSize: 16,
-              color: Color(0xFF005D90),
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          _TableTextCell(text: entry.date, flex: 2),
-          Expanded(
-            flex: 4,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: _statusPill(entry.status),
-            ),
-          ),
-          Expanded(
-            flex: 4,
-            child: Align(
-              alignment: Alignment.center,
-              child: _actionWidget(
-                entry.status,
-                onViewImage: () => _showProofFile(context, entry),
-                onVerify: () => {},
-                onReject: () => {},
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _tableFooter(int totalEntries) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: Color(0xFFEFF3F8))),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
-      ),
-      child: Row(
-        children: [
-          Text(
-            'Menampilkan $totalEntries entri',
-            style: TextStyle(
-              fontSize: 13,
-              color: Color(0xFF6B7280),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const Spacer(),
-          TextButton.icon(
-            onPressed: _reloadPayments,
-            icon: const Icon(Icons.refresh, size: 16),
-            label: const Text('Refresh'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMobileList(List<PaymentVerificationItem> entries) {
-    return Column(
-      children: [
-        for (final entry in entries)
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFFEFF3F8))),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 16,
-                      backgroundColor: _avatarBackground(entry.avatarColorKey),
-                      child: Text(
-                        entry.initials,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: _avatarText(entry.avatarColorKey),
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        entry.tenantName,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: Color(0xFF111827),
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                _statusPill(entry.status),
-                const SizedBox(height: 10),
-                Text(
-                  '${entry.unit} • ${entry.month}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF6B7280),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '${entry.amount} • ${entry.date}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF005D90),
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: _actionWidget(entry.status),
-                ),
-              ],
-            ),
-          ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Menampilkan ${entries.length} entri',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF6B7280),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: _reloadPayments,
-                child: const Text('Refresh'),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Color _avatarBackground(int colorKey) {
-    if (colorKey == 1) {
-      return const Color(0xFFDCEEFE);
-    }
-    if (colorKey == 2) {
-      return const Color(0xFFE8EEF5);
-    }
-    return const Color(0xFFE5E7EB);
-  }
-
-  Color _avatarText(int colorKey) {
-    if (colorKey == 1) {
-      return const Color(0xFF0077B6);
-    }
-    if (colorKey == 2) {
-      return const Color(0xFF374151);
-    }
-    return const Color(0xFF6B7280);
-  }
-
-  Widget _actionWidget(
-    PaymentVerificationStatus status, {
-    VoidCallback? onViewImage,
-    VoidCallback? onVerify,
-    VoidCallback? onReject,
-  }) {
-    if (status == PaymentVerificationStatus.pending) {
-      return Row(
-        children: [
-          IconButton(
-            onPressed: onViewImage,
-            icon: Icon(
-              Icons.image_outlined,
-              size: 18,
-              color: Color(0xFF6B7280),
-            ),
-          ),
-          const SizedBox(width: 8),
-          _actionButton(
-            label: 'Verifikasi',
-            backgroundColor: ConstantColor.primaryColor,
-            textColor: Colors.white,
-          ),
-          const SizedBox(width: 8),
-          _actionButton(
-            label: 'Tolak',
-            backgroundColor: const Color(0xFFFFF1F2),
-            textColor: const Color(0xFFDC2626),
-            borderColor: const Color(0xFFFECACA),
-          ),
-        ],
-      );
-    }
-
-    if (status == PaymentVerificationStatus.verified) {
-      return const Text(
-        'Detail',
-        style: TextStyle(
-          fontSize: 13,
-          color: Color(0xFF374151),
-          fontWeight: FontWeight.w600,
-        ),
-      );
-    }
-
-    return const Text(
-      'Lihat Alasan',
-      style: TextStyle(
-        fontSize: 13,
-        color: Color(0xFF374151),
-        fontWeight: FontWeight.w600,
-      ),
-    );
-  }
-
-  Widget _actionButton({
-    required String label,
-    required Color backgroundColor,
-    required Color textColor,
-    Color? borderColor,
-  }) {
-    return Container(
-      height: 30,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(8),
-        border: borderColor != null ? Border.all(color: borderColor) : null,
-      ),
-      child: Center(
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: textColor,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _statusPill(PaymentVerificationStatus status) {
-    final Color backgroundColor;
-    final Color textColor;
-    final String label;
-    final IconData icon;
-
-    switch (status) {
-      case PaymentVerificationStatus.pending:
-        backgroundColor = const Color(0xFFFDE7D2);
-        textColor = const Color(0xFF9A5800);
-        label = 'MENUNGGU VERIFIKASI';
-        icon = Icons.circle;
-        break;
-      case PaymentVerificationStatus.verified:
-        backgroundColor = const Color(0xFFDCFCE7);
-        textColor = const Color(0xFF15803D);
-        label = 'TERVERIFIKASI';
-        icon = Icons.check_circle_outline;
-        break;
-      case PaymentVerificationStatus.rejected:
-        backgroundColor = const Color(0xFFFEE2E2);
-        textColor = const Color(0xFFDC2626);
-        label = 'DITOLAK';
-        icon = Icons.cancel_outlined;
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: status == PaymentVerificationStatus.pending ? 7 : 14,
-            color: textColor,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: textColor,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.2,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback? onTap;
-
-  const _FilterChip({required this.label, this.isSelected = false, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
-      child: Container(
-        height: 38,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: isSelected ? ConstantColor.primaryColor : Colors.white,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: isSelected
-                ? ConstantColor.primaryColor
-                : const Color(0xFFE5E7EB),
-          ),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: isSelected ? Colors.white : const Color(0xFF4B5563),
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TableHeaderCell extends StatelessWidget {
-  final String text;
-  final int flex;
-  final TextAlign textAlign;
-
-  const _TableHeaderCell({
-    required this.text,
-    required this.flex,
-    this.textAlign = TextAlign.left,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      flex: flex,
-      child: Text(
-        text,
-        textAlign: textAlign,
-        style: const TextStyle(
-          fontSize: 11,
-          color: Color(0xFF6B7280),
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.45,
-        ),
-      ),
-    );
-  }
-}
-
-class _TableTextCell extends StatelessWidget {
-  final String text;
-  final int flex;
-  final TextStyle? textStyle;
-
-  const _TableTextCell({
-    required this.text,
-    required this.flex,
-    this.textStyle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      flex: flex,
-      child: Text(
-        text,
-        overflow: TextOverflow.ellipsis,
-        style:
-            textStyle ??
-            const TextStyle(
-              fontSize: 13,
-              color: Color(0xFF374151),
-              fontWeight: FontWeight.w600,
-            ),
-      ),
-    );
+    return isMobile
+        ? PaymentMobileList(entries: entries, onReload: _reloadPayments)
+        : PaymentDesktopTable(
+            entries: entries,
+            onReload: _reloadPayments,
+            onShowProofFile: (entry) => _showProofFile(context, entry),
+          );
   }
 }
