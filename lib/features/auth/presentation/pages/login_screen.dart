@@ -181,7 +181,8 @@ class LoginScreen extends StatelessWidget {
                     ),
                   ),
                   SizedBox(height: h(8)),
-                  Obx(() => TextField(
+                  Obx(
+                    () => TextField(
                       controller: controller.passwordController,
                       obscureText: controller.obscureText.value,
                       textInputAction: TextInputAction.done,
