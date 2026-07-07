@@ -48,27 +48,6 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
     _controller.fetchPayments(status: filter);
   }
 
-  String _proofExtension(PaymentVerificationItem entry) {
-    String source = entry.proofFileName ?? '';
-    if (source.isEmpty && entry.proofFileUrl != null) {
-      source = Uri.parse(entry.proofFileUrl!).path;
-    }
-
-    final dotIndex = source.lastIndexOf('.');
-    if (dotIndex == -1 || dotIndex == source.length - 1) {
-      return '';
-    }
-    return source.substring(dotIndex + 1).toLowerCase();
-  }
-
-  String _normalizeProofUrl(String url) {
-    final trimmed = url.trim();
-    if (trimmed.isEmpty) {
-      return trimmed;
-    }
-    return Uri.encodeFull(trimmed);
-  }
-
   void _showProofFile(BuildContext context, PaymentVerificationItem entry) {
     final proofUrl = entry.proofFileUrl;
     if (proofUrl == null || proofUrl.isEmpty) {
@@ -88,8 +67,7 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
       return;
     }
 
-    final normalizedProofUrl = _normalizeProofUrl(proofUrl);
-    final extension = _proofExtension(entry);
+    final extension = _controller.proofExtension(entry);
 
     if (extension == 'pdf') {
       if (kIsWeb) {
@@ -100,7 +78,7 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
             content: SizedBox(
               width: MediaQuery.of(context).size.width * 0.8,
               height: MediaQuery.of(context).size.height * 0.75,
-              child: web_pdf_embed.buildWebPdfEmbed(normalizedProofUrl),
+              child: web_pdf_embed.buildWebPdfEmbed(proofUrl),
             ),
             actions: [
               TextButton(
@@ -121,7 +99,7 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
             width: MediaQuery.of(context).size.width * 0.8,
             height: MediaQuery.of(context).size.height * 0.75,
             child: SfPdfViewer.network(
-              normalizedProofUrl,
+              proofUrl,
               onDocumentLoadFailed: (_) {
                 if (!mounted) {
                   return;
@@ -152,10 +130,10 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
           height: MediaQuery.of(context).size.height * 0.7,
           child: kIsWeb
               ? web_network_image_embed.buildWebNetworkImageEmbed(
-                  normalizedProofUrl,
+                  proofUrl,
                 )
               : CachedNetworkImage(
-                  imageUrl: normalizedProofUrl,
+                  imageUrl: proofUrl,
                   fit: BoxFit.contain,
                   placeholder: (context, url) =>
                       const Center(child: CircularProgressIndicator()),

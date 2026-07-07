@@ -231,6 +231,27 @@ class PaymentsController extends GetxController {
     }
     return value.codeUnits.fold(0, (a, b) => a + b).isEven ? 1 : 2;
   }
+
+  String normalizeProofUrl(String url) {
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) {
+      return trimmed;
+    }
+    return Uri.encodeFull(trimmed);
+  }
+
+  String proofExtension(PaymentVerificationItem entry) {
+    String source = entry.proofFileName ?? '';
+    if (source.isEmpty && entry.proofFileUrl != null) {
+      source = Uri.parse(entry.proofFileUrl!).path;
+    }
+
+    final dotIndex = source.lastIndexOf('.');
+    if (dotIndex == -1 || dotIndex == source.length - 1) {
+      return '';
+    }
+    return source.substring(dotIndex + 1).toLowerCase();
+  }
 }
 
 enum PaymentVerificationStatus { pending, verified, rejected }
