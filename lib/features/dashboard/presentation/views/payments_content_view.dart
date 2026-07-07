@@ -1,7 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/controllers/payments_bloc.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/controllers/payments_controller.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/views/widgets/payments_ui_components.dart';
 import 'package:rumah_sewa_biru_laut_fe/utils/helpers/web_network_image_embed_stub.dart'
@@ -20,32 +21,25 @@ class PaymentsContentView extends StatefulWidget {
 }
 
 class _PaymentsContentViewState extends State<PaymentsContentView> {
-  late PaymentsController _controller;
-  PaymentFilterStatus _selectedFilter = PaymentFilterStatus.all;
+  late PaymentsBloc _paymentsBloc;
 
   @override
-  void initState() {
-    super.initState();
-    if (Get.isRegistered<PaymentsController>()) {
-      _controller = Get.find<PaymentsController>();
-    } else {
-      _controller = Get.put(PaymentsController());
-    }
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _paymentsBloc = context.read<PaymentsBloc>();
   }
 
   void _reloadPayments() {
-    _controller.fetchPayments(status: _selectedFilter);
+    _paymentsBloc.add(
+      PaymentsFetched(status: _paymentsBloc.state.selectedFilter),
+    );
   }
 
   void _onFilterSelected(PaymentFilterStatus filter) {
-    if (_selectedFilter == filter) {
+    if (_paymentsBloc.state.selectedFilter == filter) {
       return;
     }
-
-    setState(() {
-      _selectedFilter = filter;
-    });
-    _controller.fetchPayments(status: filter);
+    _paymentsBloc.add(PaymentFilterChanged(filter));
   }
 
   void _showProofFile(BuildContext context, PaymentVerificationItem entry) {
@@ -67,7 +61,8 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
       return;
     }
 
-    final extension = _controller.proofExtension(entry);
+    final extension = proofExtension(entry);
+    final normalizedProofUrl = normalizeProofUrl(proofUrl);
 
     if (extension == 'pdf') {
       if (kIsWeb) {
@@ -78,7 +73,7 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
             content: SizedBox(
               width: MediaQuery.of(context).size.width * 0.8,
               height: MediaQuery.of(context).size.height * 0.75,
-              child: web_pdf_embed.buildWebPdfEmbed(proofUrl),
+              child: web_pdf_embed.buildWebPdfEmbed(normalizedProofUrl),
             ),
             actions: [
               TextButton(
@@ -99,7 +94,7 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
             width: MediaQuery.of(context).size.width * 0.8,
             height: MediaQuery.of(context).size.height * 0.75,
             child: SfPdfViewer.network(
-              proofUrl,
+              normalizedProofUrl,
               onDocumentLoadFailed: (_) {
                 if (!mounted) {
                   return;
@@ -130,10 +125,10 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
           height: MediaQuery.of(context).size.height * 0.7,
           child: kIsWeb
               ? web_network_image_embed.buildWebNetworkImageEmbed(
-                  proofUrl,
+                  normalizedProofUrl,
                 )
               : CachedNetworkImage(
-                  imageUrl: proofUrl,
+                  imageUrl: normalizedProofUrl,
                   fit: BoxFit.contain,
                   placeholder: (context, url) =>
                       const Center(child: CircularProgressIndicator()),
@@ -151,17 +146,37 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
     );
   }
 
+  void _onVerifyPayment(BuildContext context, PaymentVerificationItem entry) {
+    if (entry.paymentId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ID pembayaran tidak ditemukan.')),
+      );
+      return;
+    }
+    _paymentsBloc.add(PaymentVerificationRequested(entry.paymentId));
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 800;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        PaymentsHeaderSection(isMobile: isMobile),
-        SizedBox(height: isMobile ? 20 : 24),
-        _buildPaymentTableCard(context, isMobile),
-      ],
+    return BlocListener<PaymentsBloc, PaymentsState>(
+      listenWhen: (previous, current) =>
+          previous.actionErrorMessage != current.actionErrorMessage &&
+          current.actionErrorMessage.isNotEmpty,
+      listener: (context, state) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(state.actionErrorMessage)));
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          PaymentsHeaderSection(isMobile: isMobile),
+          SizedBox(height: isMobile ? 20 : 24),
+          _buildPaymentTableCard(context, isMobile),
+        ],
+      ),
     );
   }
 
@@ -177,18 +192,20 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
         children: [
           PaymentsFilterBar(
             isMobile: isMobile,
-            selectedFilter: _selectedFilter,
+            selectedFilter: context.select(
+              (PaymentsBloc bloc) => bloc.state.selectedFilter,
+            ),
             onFilterSelected: _onFilterSelected,
           ),
           const SizedBox(height: 14),
-          Obx(
-            () => Container(
+          BlocBuilder<PaymentsBloc, PaymentsState>(
+            builder: (context, state) => Container(
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(color: const Color(0xFFE7EDF5)),
               ),
-              child: _buildPaymentContent(context, isMobile),
+              child: _buildPaymentContent(context, isMobile, state),
             ),
           ),
         ],
@@ -196,15 +213,19 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
     );
   }
 
-  Widget _buildPaymentContent(BuildContext context, bool isMobile) {
-    if (_controller.isLoading.value) {
+  Widget _buildPaymentContent(
+    BuildContext context,
+    bool isMobile,
+    PaymentsState state,
+  ) {
+    if (state.isLoading) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 28),
         child: Center(child: CircularProgressIndicator()),
       );
     }
 
-    if (_controller.errorMessage.value.isNotEmpty) {
+    if (state.errorMessage.isNotEmpty) {
       return Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
@@ -220,7 +241,7 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
             ),
             const SizedBox(height: 10),
             Text(
-              _controller.errorMessage.value,
+              state.errorMessage,
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
@@ -237,7 +258,7 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
       );
     }
 
-    final entries = _controller.payments;
+    final entries = state.payments;
     if (entries.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 28),
@@ -255,11 +276,18 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
     }
 
     return isMobile
-        ? PaymentMobileList(entries: entries, onReload: _reloadPayments)
+        ? PaymentMobileList(
+            entries: entries,
+            onReload: _reloadPayments,
+            onVerifyPayment: (entry) => _onVerifyPayment(context, entry),
+            verifyingPaymentIds: state.verifyingPaymentIds,
+          )
         : PaymentDesktopTable(
             entries: entries,
             onReload: _reloadPayments,
             onShowProofFile: (entry) => _showProofFile(context, entry),
+            onVerifyPayment: (entry) => _onVerifyPayment(context, entry),
+            verifyingPaymentIds: state.verifyingPaymentIds,
           );
   }
 }

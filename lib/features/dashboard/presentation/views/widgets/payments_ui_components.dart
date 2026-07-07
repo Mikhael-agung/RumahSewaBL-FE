@@ -139,12 +139,16 @@ class PaymentDesktopTable extends StatelessWidget {
   final List<PaymentVerificationItem> entries;
   final VoidCallback onReload;
   final ValueChanged<PaymentVerificationItem> onShowProofFile;
+  final ValueChanged<PaymentVerificationItem> onVerifyPayment;
+  final Set<String> verifyingPaymentIds;
 
   const PaymentDesktopTable({
     super.key,
     required this.entries,
     required this.onReload,
     required this.onShowProofFile,
+    required this.onVerifyPayment,
+    required this.verifyingPaymentIds,
   });
 
   @override
@@ -229,6 +233,8 @@ class PaymentDesktopTable extends StatelessWidget {
               child: PaymentActionWidget(
                 status: entry.status,
                 onViewImage: () => onShowProofFile(entry),
+                onVerify: () => onVerifyPayment(entry),
+                isVerifying: verifyingPaymentIds.contains(entry.paymentId),
               ),
             ),
           ),
@@ -269,11 +275,15 @@ class PaymentDesktopTable extends StatelessWidget {
 class PaymentMobileList extends StatelessWidget {
   final List<PaymentVerificationItem> entries;
   final VoidCallback onReload;
+  final ValueChanged<PaymentVerificationItem> onVerifyPayment;
+  final Set<String> verifyingPaymentIds;
 
   const PaymentMobileList({
     super.key,
     required this.entries,
     required this.onReload,
+    required this.onVerifyPayment,
+    required this.verifyingPaymentIds,
   });
 
   @override
@@ -341,7 +351,11 @@ class PaymentMobileList extends StatelessWidget {
                 const SizedBox(height: 10),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: PaymentActionWidget(status: entry.status),
+                  child: PaymentActionWidget(
+                    status: entry.status,
+                    onVerify: () => onVerifyPayment(entry),
+                    isVerifying: verifyingPaymentIds.contains(entry.paymentId),
+                  ),
                 ),
               ],
             ),
@@ -392,11 +406,17 @@ Color paymentAvatarText(int colorKey) {
 class PaymentActionWidget extends StatelessWidget {
   final PaymentVerificationStatus status;
   final VoidCallback? onViewImage;
+  final VoidCallback? onVerify;
+  final VoidCallback? onReject;
+  final bool isVerifying;
 
   const PaymentActionWidget({
     super.key,
     required this.status,
     this.onViewImage,
+    this.onVerify,
+    this.onReject,
+    this.isVerifying = false,
   });
 
   @override
@@ -417,6 +437,8 @@ class PaymentActionWidget extends StatelessWidget {
             label: 'Verifikasi',
             backgroundColor: ConstantColor.primaryColor,
             textColor: Colors.white,
+            onTap: isVerifying ? null : onVerify,
+            isLoading: isVerifying,
           ),
           const SizedBox(width: 8),
           PaymentActionButton(
@@ -424,6 +446,7 @@ class PaymentActionWidget extends StatelessWidget {
             backgroundColor: const Color(0xFFFFF1F2),
             textColor: const Color(0xFFDC2626),
             borderColor: const Color(0xFFFECACA),
+            onTap: onReject,
           ),
         ],
       );
@@ -456,6 +479,8 @@ class PaymentActionButton extends StatelessWidget {
   final Color backgroundColor;
   final Color textColor;
   final Color? borderColor;
+  final VoidCallback? onTap;
+  final bool isLoading;
 
   const PaymentActionButton({
     super.key,
@@ -463,26 +488,45 @@ class PaymentActionButton extends StatelessWidget {
     required this.backgroundColor,
     required this.textColor,
     this.borderColor,
+    this.onTap,
+    this.isLoading = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 30,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(8),
-        border: borderColor != null ? Border.all(color: borderColor!) : null,
-      ),
-      child: Center(
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: textColor,
-            fontWeight: FontWeight.w700,
-          ),
+    final isDisabled = onTap == null || isLoading;
+
+    return InkWell(
+      onTap: isDisabled ? null : onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        height: 30,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: isDisabled
+              ? backgroundColor.withOpacity(0.75)
+              : backgroundColor,
+          borderRadius: BorderRadius.circular(8),
+          border: borderColor != null ? Border.all(color: borderColor!) : null,
+        ),
+        child: Center(
+          child: isLoading
+              ? SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(textColor),
+                  ),
+                )
+              : Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: textColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
         ),
       ),
     );
