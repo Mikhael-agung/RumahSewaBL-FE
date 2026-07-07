@@ -88,8 +88,14 @@ class PaymentsController extends GetxController {
                 map['payment_date'] ?? map['uploaded_at'] ?? map['created_at'],
               ),
             ),
-            status: _mapStatus(_asString(map['payment_status'])),
+            status: mapPaymentStatus(_asString(map['payment_status'])),
             avatarColorKey: _avatarColorKey(tenantName),
+            proofFileUrl: _asNullableString(
+              map['proof_file_url'] ?? map['proofFileUrl'],
+            ),
+            proofFileName: _asNullableString(
+              map['proof_file_name'] ?? map['proofFileName'],
+            ),
           );
         }).toList(),
       );
@@ -106,6 +112,11 @@ class PaymentsController extends GetxController {
       return '';
     }
     return value.toString().trim();
+  }
+
+  String? _asNullableString(dynamic value) {
+    final result = _asString(value);
+    return result.isEmpty ? null : result;
   }
 
   int _parseInt(dynamic value) {
@@ -214,17 +225,6 @@ class PaymentsController extends GetxController {
     return '$day ${months[date.month - 1]} ${date.year}';
   }
 
-  PaymentVerificationStatus _mapStatus(String rawStatus) {
-    final normalized = rawStatus.toLowerCase();
-    if (normalized.contains('verif')) {
-      return PaymentVerificationStatus.verified;
-    }
-    if (normalized.contains('reject') || normalized.contains('tolak')) {
-      return PaymentVerificationStatus.rejected;
-    }
-    return PaymentVerificationStatus.pending;
-  }
-
   int _avatarColorKey(String value) {
     if (value.trim().isEmpty) {
       return 0;
@@ -255,6 +255,33 @@ enum PaymentFilterStatus {
   }
 }
 
+PaymentVerificationStatus mapPaymentStatus(String rawStatus) {
+  final normalized = rawStatus.trim().toLowerCase();
+  final compacted = normalized.replaceAll(' ', '_');
+
+  if (compacted == 'menunggu_verifikasi' || compacted == 'menunggu') {
+    return PaymentVerificationStatus.pending;
+  }
+  if (compacted == 'terverifikasi' || compacted == 'verified') {
+    return PaymentVerificationStatus.verified;
+  }
+  if (compacted == 'ditolak' || compacted == 'rejected') {
+    return PaymentVerificationStatus.rejected;
+  }
+
+  if (compacted.contains('tolak') || compacted.contains('reject')) {
+    return PaymentVerificationStatus.rejected;
+  }
+  if (compacted.contains('tunggu')) {
+    return PaymentVerificationStatus.pending;
+  }
+  if (compacted == 'verifikasi' || compacted.contains('verified')) {
+    return PaymentVerificationStatus.verified;
+  }
+
+  return PaymentVerificationStatus.pending;
+}
+
 class PaymentVerificationItem {
   final String no;
   final String initials;
@@ -265,6 +292,8 @@ class PaymentVerificationItem {
   final String date;
   final PaymentVerificationStatus status;
   final int avatarColorKey;
+  final String? proofFileUrl;
+  final String? proofFileName;
 
   const PaymentVerificationItem({
     required this.no,
@@ -276,6 +305,8 @@ class PaymentVerificationItem {
     required this.date,
     required this.status,
     required this.avatarColorKey,
+    this.proofFileUrl,
+    this.proofFileName,
   });
 
   factory PaymentVerificationItem.empty({required int index}) {
@@ -289,6 +320,8 @@ class PaymentVerificationItem {
       date: '-',
       status: PaymentVerificationStatus.pending,
       avatarColorKey: 0,
+      proofFileUrl: null,
+      proofFileName: null,
     );
   }
 }

@@ -1,7 +1,17 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/constants/colors.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/controllers/payments_controller.dart';
+import 'package:rumah_sewa_biru_laut_fe/utils/helpers/web_network_image_embed_stub.dart'
+    if (dart.library.html) 'package:rumah_sewa_biru_laut_fe/utils/helpers/web_network_image_embed_web.dart'
+    as web_network_image_embed;
+import 'package:rumah_sewa_biru_laut_fe/utils/helpers/web_pdf_embed_stub.dart'
+    if (dart.library.html) 'package:rumah_sewa_biru_laut_fe/utils/helpers/web_pdf_embed_web.dart'
+    as web_pdf_embed;
+import 'package:rumah_sewa_biru_laut_fe/utils/helpers/currency_format.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class PaymentsContentView extends StatefulWidget {
   const PaymentsContentView({super.key});
@@ -36,6 +46,131 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
       _selectedFilter = filter;
     });
     _controller.fetchPayments(status: filter);
+  }
+
+  String _proofExtension(PaymentVerificationItem entry) {
+    String source = entry.proofFileName ?? '';
+    if (source.isEmpty && entry.proofFileUrl != null) {
+      source = Uri.parse(entry.proofFileUrl!).path;
+    }
+
+    final dotIndex = source.lastIndexOf('.');
+    if (dotIndex == -1 || dotIndex == source.length - 1) {
+      return '';
+    }
+    return source.substring(dotIndex + 1).toLowerCase();
+  }
+
+  String _normalizeProofUrl(String url) {
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) {
+      return trimmed;
+    }
+    return Uri.encodeFull(trimmed);
+  }
+
+  void _showProofFile(BuildContext context, PaymentVerificationItem entry) {
+    final proofUrl = entry.proofFileUrl;
+    if (proofUrl == null || proofUrl.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Bukti Transfer'),
+          content: const Text('Bukti transfer tidak tersedia.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    final normalizedProofUrl = _normalizeProofUrl(proofUrl);
+
+    final extension = _proofExtension(entry);
+    print('Proof file extension: $extension, URL: $normalizedProofUrl');
+    if (extension == 'pdf') {
+      if (kIsWeb) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Bukti Transfer (PDF)'),
+            content: SizedBox(
+              width: MediaQuery.of(context).size.width * 0.8,
+              height: MediaQuery.of(context).size.height * 0.75,
+              child: web_pdf_embed.buildWebPdfEmbed(normalizedProofUrl),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Tutup'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Bukti Transfer (PDF)'),
+          content: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.8,
+            height: MediaQuery.of(context).size.height * 0.75,
+            child: SfPdfViewer.network(
+              normalizedProofUrl,
+              onDocumentLoadFailed: (_) {
+                if (!mounted) {
+                  return;
+                }
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Gagal memuat file PDF.')),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Bukti Transfer'),
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.8,
+          height: MediaQuery.of(context).size.height * 0.7,
+          child: kIsWeb
+              ? web_network_image_embed.buildWebNetworkImageEmbed(
+                  normalizedProofUrl,
+                )
+              : CachedNetworkImage(
+                  imageUrl: normalizedProofUrl,
+                  fit: BoxFit.contain,
+                  placeholder: (context, url) =>
+                      const Center(child: CircularProgressIndicator()),
+                  errorWidget: (context, url, error) =>
+                      const Center(child: Icon(Icons.error)),
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -243,10 +378,6 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                _searchField(),
-                const SizedBox(height: 10),
-                _monthButton(),
               ],
             )
           : Row(
@@ -278,10 +409,6 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
                   isSelected: _selectedFilter == PaymentFilterStatus.rejected,
                   onTap: () => _onFilterSelected(PaymentFilterStatus.rejected),
                 ),
-                const SizedBox(width: 12),
-                Expanded(child: _searchField()),
-                const SizedBox(width: 12),
-                _monthButton(),
               ],
             ),
     );
@@ -354,7 +481,7 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
           child: const Row(
             children: [
               _TableHeaderCell(text: 'NO', flex: 1),
-              _TableHeaderCell(text: 'PENYEWA', flex: 4),
+              _TableHeaderCell(text: 'PENYEWA', flex: 2),
               _TableHeaderCell(text: 'UNIT/KAMAR', flex: 3),
               _TableHeaderCell(text: 'BULAN', flex: 3),
               _TableHeaderCell(text: 'JUMLAH', flex: 3),
@@ -384,40 +511,23 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
         children: [
           _TableTextCell(text: entry.no, flex: 1),
           Expanded(
-            flex: 4,
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 15,
-                  backgroundColor: _avatarBackground(entry.avatarColorKey),
-                  child: Text(
-                    entry.initials,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: _avatarText(entry.avatarColorKey),
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    entry.tenantName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF111827),
-                      fontWeight: FontWeight.w700,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+            flex: 2,
+            child: Text(
+              entry.tenantName,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Color(0xFF111827),
+                fontWeight: FontWeight.w700,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           _TableTextCell(text: entry.unit, flex: 3),
           _TableTextCell(text: entry.month, flex: 3),
           _TableTextCell(
-            text: entry.amount,
+            text: currencyIdr.format(
+              int.tryParse(entry.amount.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0,
+            ),
             flex: 3,
             textStyle: const TextStyle(
               fontSize: 16,
@@ -437,7 +547,12 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
             flex: 4,
             child: Align(
               alignment: Alignment.center,
-              child: _actionWidget(entry.status),
+              child: _actionWidget(
+                entry.status,
+                onViewImage: () => _showProofFile(context, entry),
+                onVerify: () => {},
+                onReject: () => {},
+              ),
             ),
           ),
         ],
@@ -585,19 +700,30 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
     return const Color(0xFF6B7280);
   }
 
-  Widget _actionWidget(PaymentVerificationStatus status) {
+  Widget _actionWidget(
+    PaymentVerificationStatus status, {
+    VoidCallback? onViewImage,
+    VoidCallback? onVerify,
+    VoidCallback? onReject,
+  }) {
     if (status == PaymentVerificationStatus.pending) {
-      return Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        crossAxisAlignment: WrapCrossAlignment.center,
+      return Row(
         children: [
-          const Icon(Icons.image_outlined, size: 18, color: Color(0xFF6B7280)),
+          IconButton(
+            onPressed: onViewImage,
+            icon: Icon(
+              Icons.image_outlined,
+              size: 18,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+          const SizedBox(width: 8),
           _actionButton(
             label: 'Verifikasi',
             backgroundColor: ConstantColor.primaryColor,
             textColor: Colors.white,
           ),
+          const SizedBox(width: 8),
           _actionButton(
             label: 'Tolak',
             backgroundColor: const Color(0xFFFFF1F2),
