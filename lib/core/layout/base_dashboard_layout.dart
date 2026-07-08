@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/auth/bindings/auth_binding.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/auth/domain/repositories/auth_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -359,8 +360,8 @@ class BaseDashboardLayout extends StatelessWidget {
             ),
           ] else ...[
             // Date
-            const Text(
-              "20 Oktober 2023",
+            Text(
+              DateFormat('dd MMM yyyy').format(DateTime.now()),
               style: TextStyle(
                 color: ConstantColor.textSecondaryColor,
                 fontSize: 14,
