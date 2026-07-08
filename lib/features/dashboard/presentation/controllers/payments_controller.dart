@@ -93,15 +93,38 @@ class PaymentsRepository {
   Future<void> updatePaymentStatus({
     required String paymentId,
     required PaymentVerificationStatus status,
+    String? rejectionReason,
   }) async {
     if (paymentId.trim().isEmpty) {
       throw Exception('ID pembayaran tidak ditemukan.');
     }
 
-    await _apiService.post(
-      '/api/payments/$paymentId/status',
-      data: {'status': status.apiValue},
+    final body = <String, dynamic>{'status': status.apiValue};
+    if (status == PaymentVerificationStatus.rejected) {
+      body['rejection_reason'] = (rejectionReason ?? '').trim();
+    }
+
+    await _apiService.post('/api/payments/$paymentId/status', data: body);
+  }
+
+  Future<void> exportPaymentsDummy({
+    PaymentFilterStatus status = PaymentFilterStatus.all,
+  }) async {
+    final response = await _apiService.get(
+      '/api/payments/payment-verify/export-dummy',
+      queryParameters: {'status': status.queryParam ?? 'all', 'dummy': 'true'},
     );
+
+    final data = response.data;
+    if (data is Map<String, dynamic>) {
+      final isSuccess = data['success'];
+      if (isSuccess is bool && !isSuccess) {
+        final message = _asString(data['message']);
+        throw Exception(
+          message.isEmpty ? 'Gagal mengekspor data pembayaran.' : message,
+        );
+      }
+    }
   }
 
   String _asString(dynamic value) {

@@ -5,8 +5,15 @@ import 'package:rumah_sewa_biru_laut_fe/utils/helpers/currency_format.dart';
 
 class PaymentsHeaderSection extends StatelessWidget {
   final bool isMobile;
+  final VoidCallback onExportPressed;
+  final bool isExporting;
 
-  const PaymentsHeaderSection({super.key, required this.isMobile});
+  const PaymentsHeaderSection({
+    super.key,
+    required this.isMobile,
+    required this.onExportPressed,
+    this.isExporting = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +38,8 @@ class PaymentsHeaderSection extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
+              const SizedBox(height: 14),
+              _exportButton(isCompact: true),
             ],
           )
         : Row(
@@ -61,8 +70,53 @@ class PaymentsHeaderSection extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(width: 18),
+              _exportButton(isCompact: false),
             ],
           );
+  }
+
+  Widget _exportButton({required bool isCompact}) {
+    return Container(
+      height: isCompact ? 42 : 46,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: InkWell(
+        onTap: isExporting ? null : onExportPressed,
+        borderRadius: BorderRadius.circular(999),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isExporting) ...[
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ] else ...[
+              const Icon(
+                Icons.file_download_outlined,
+                size: 18,
+                color: Color(0xFF111827),
+              ),
+            ],
+            const SizedBox(width: 8),
+            Text(
+              isExporting ? 'Mengekspor...' : 'Ekspor Data',
+              style: TextStyle(
+                fontSize: isCompact ? 13 : 15,
+                color: const Color(0xFF111827),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -140,6 +194,7 @@ class PaymentDesktopTable extends StatelessWidget {
   final VoidCallback onReload;
   final ValueChanged<PaymentVerificationItem> onShowProofFile;
   final ValueChanged<PaymentVerificationItem> onVerifyPayment;
+  final ValueChanged<PaymentVerificationItem> onRejectPayment;
   final Set<String> verifyingPaymentIds;
 
   const PaymentDesktopTable({
@@ -148,6 +203,7 @@ class PaymentDesktopTable extends StatelessWidget {
     required this.onReload,
     required this.onShowProofFile,
     required this.onVerifyPayment,
+    required this.onRejectPayment,
     required this.verifyingPaymentIds,
   });
 
@@ -234,6 +290,7 @@ class PaymentDesktopTable extends StatelessWidget {
                 status: entry.status,
                 onViewImage: () => onShowProofFile(entry),
                 onVerify: () => onVerifyPayment(entry),
+                onReject: () => onRejectPayment(entry),
                 isVerifying: verifyingPaymentIds.contains(entry.paymentId),
               ),
             ),
@@ -276,6 +333,7 @@ class PaymentMobileList extends StatelessWidget {
   final List<PaymentVerificationItem> entries;
   final VoidCallback onReload;
   final ValueChanged<PaymentVerificationItem> onVerifyPayment;
+  final ValueChanged<PaymentVerificationItem> onRejectPayment;
   final Set<String> verifyingPaymentIds;
 
   const PaymentMobileList({
@@ -283,6 +341,7 @@ class PaymentMobileList extends StatelessWidget {
     required this.entries,
     required this.onReload,
     required this.onVerifyPayment,
+    required this.onRejectPayment,
     required this.verifyingPaymentIds,
   });
 
@@ -354,6 +413,7 @@ class PaymentMobileList extends StatelessWidget {
                   child: PaymentActionWidget(
                     status: entry.status,
                     onVerify: () => onVerifyPayment(entry),
+                    onReject: () => onRejectPayment(entry),
                     isVerifying: verifyingPaymentIds.contains(entry.paymentId),
                   ),
                 ),
@@ -446,7 +506,7 @@ class PaymentActionWidget extends StatelessWidget {
             backgroundColor: const Color(0xFFFFF1F2),
             textColor: const Color(0xFFDC2626),
             borderColor: const Color(0xFFFECACA),
-            onTap: onReject,
+            onTap: isVerifying ? null : onReject,
           ),
         ],
       );

@@ -43,6 +43,12 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
     _paymentsBloc.add(PaymentFilterChanged(filter));
   }
 
+  void _onExportData() {
+    _paymentsBloc.add(
+      PaymentExportRequested(status: _paymentsBloc.state.selectedFilter),
+    );
+  }
+
   void _showProofFile(BuildContext context, PaymentVerificationItem entry) {
     final proofUrl = entry.proofFileUrl;
     if (proofUrl == null || proofUrl.isEmpty) {
@@ -147,14 +153,42 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
     );
   }
 
-  void _onVerifyPayment(BuildContext context, PaymentVerificationItem entry) {
+  Future<void> _onUpdatePaymentStatus(
+    BuildContext context,
+    PaymentVerificationItem entry,
+    PaymentVerificationStatus targetStatus,
+  ) async {
     if (entry.paymentId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('ID pembayaran tidak ditemukan.')),
       );
       return;
     }
-    _paymentsBloc.add(PaymentVerificationRequested(entry.paymentId));
+
+    final note = await _showStatusUpdateDialog(context, targetStatus);
+    if (!mounted || note == null) {
+      return;
+    }
+
+    _paymentsBloc.add(
+      PaymentStatusUpdateRequested(
+        paymentId: entry.paymentId,
+        status: targetStatus,
+        rejectionReason: targetStatus == PaymentVerificationStatus.rejected
+            ? note
+            : null,
+      ),
+    );
+  }
+
+  Future<String?> _showStatusUpdateDialog(
+    BuildContext context,
+    PaymentVerificationStatus targetStatus,
+  ) {
+    return showDialog<String>(
+      context: context,
+      builder: (_) => _PaymentStatusDialog(targetStatus: targetStatus),
+    );
   }
 
   @override
@@ -163,17 +197,33 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
 
     return BlocListener<PaymentsBloc, PaymentsState>(
       listenWhen: (previous, current) =>
-          previous.actionErrorMessage != current.actionErrorMessage &&
-          current.actionErrorMessage.isNotEmpty,
+          previous.actionErrorMessage != current.actionErrorMessage ||
+          previous.actionSuccessMessage != current.actionSuccessMessage,
       listener: (context, state) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(state.actionErrorMessage)));
+        if (state.actionErrorMessage.isNotEmpty) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.actionErrorMessage)));
+        }
+        if (state.actionSuccessMessage.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.actionSuccessMessage),
+              backgroundColor: const Color(0xFF047857),
+            ),
+          );
+        }
       },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          PaymentsHeaderSection(isMobile: isMobile),
+          PaymentsHeaderSection(
+            isMobile: isMobile,
+            onExportPressed: _onExportData,
+            isExporting: context.select(
+              (PaymentsBloc bloc) => bloc.state.isExporting,
+            ),
+          ),
           SizedBox(height: isMobile ? 20 : 24),
           _buildPaymentTableCard(context, isMobile),
         ],
@@ -277,14 +327,32 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
         ? PaymentMobileList(
             entries: entries,
             onReload: _reloadPayments,
-            onVerifyPayment: (entry) => _onVerifyPayment(context, entry),
+            onVerifyPayment: (entry) => _onUpdatePaymentStatus(
+              context,
+              entry,
+              PaymentVerificationStatus.verified,
+            ),
+            onRejectPayment: (entry) => _onUpdatePaymentStatus(
+              context,
+              entry,
+              PaymentVerificationStatus.rejected,
+            ),
             verifyingPaymentIds: state.verifyingPaymentIds,
           )
         : PaymentDesktopTable(
             entries: entries,
             onReload: _reloadPayments,
             onShowProofFile: (entry) => _showProofFile(context, entry),
-            onVerifyPayment: (entry) => _onVerifyPayment(context, entry),
+            onVerifyPayment: (entry) => _onUpdatePaymentStatus(
+              context,
+              entry,
+              PaymentVerificationStatus.verified,
+            ),
+            onRejectPayment: (entry) => _onUpdatePaymentStatus(
+              context,
+              entry,
+              PaymentVerificationStatus.rejected,
+            ),
             verifyingPaymentIds: state.verifyingPaymentIds,
           );
   }
@@ -433,6 +501,86 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(radius),
       ),
+    );
+  }
+}
+
+class _PaymentStatusDialog extends StatefulWidget {
+  final PaymentVerificationStatus targetStatus;
+
+  const _PaymentStatusDialog({required this.targetStatus});
+
+  @override
+  State<_PaymentStatusDialog> createState() => _PaymentStatusDialogState();
+}
+
+class _PaymentStatusDialogState extends State<_PaymentStatusDialog> {
+  late final TextEditingController _noteController;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isReject = widget.targetStatus == PaymentVerificationStatus.rejected;
+
+    return AlertDialog(
+      title: Text(isReject ? 'Tolak Pembayaran' : 'Verifikasi Pembayaran'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            isReject
+                ? 'Anda akan menolak pembayaran ini.'
+                : 'Anda akan memverifikasi pembayaran ini.',
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF4B5563),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _noteController,
+            maxLines: 3,
+            decoration: InputDecoration(
+              labelText: isReject
+                  ? 'Alasan penolakan (opsional)'
+                  : 'Catatan verifikasi (opsional)',
+              hintText: isReject
+                  ? 'Contoh: nominal transfer tidak sesuai'
+                  : 'Tambahkan catatan bila perlu',
+              border: const OutlineInputBorder(),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('Batal'),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: isReject
+                ? const Color(0xFFDC2626)
+                : const Color(0xFF0F766E),
+          ),
+          onPressed: () =>
+              Navigator.of(context).pop(_noteController.text.trim()),
+          child: Text(isReject ? 'Tolak' : 'Verifikasi'),
+        ),
+      ],
     );
   }
 }
