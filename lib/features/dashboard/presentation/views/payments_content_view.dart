@@ -2,9 +2,15 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
+import 'package:go_router/go_router.dart';
+import 'package:rumah_sewa_biru_laut_fe/core/controllers/user_controller.dart';
+import 'package:rumah_sewa_biru_laut_fe/core/routes/route_name.dart';
+import 'package:rumah_sewa_biru_laut_fe/core/services/global_notification_service.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/controllers/payments_bloc.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/controllers/payments_controller.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/views/widgets/payments_ui_components.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:rumah_sewa_biru_laut_fe/utils/helpers/web_network_image_embed_stub.dart'
     if (dart.library.html) 'package:rumah_sewa_biru_laut_fe/utils/helpers/web_network_image_embed_web.dart'
@@ -23,6 +29,7 @@ class PaymentsContentView extends StatefulWidget {
 
 class _PaymentsContentViewState extends State<PaymentsContentView> {
   late PaymentsBloc _paymentsBloc;
+  bool _isSessionExpiredDialogVisible = false;
 
   @override
   void didChangeDependencies() {
@@ -203,15 +210,75 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
     );
   }
 
+  Future<void> _handleUnauthenticatedSession() async {
+    if (!mounted || _isSessionExpiredDialogVisible) {
+      return;
+    }
+    _isSessionExpiredDialogVisible = true;
+
+    try {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Sesi Berakhir'),
+          content: const Text(
+            'Sesi login Anda sudah berakhir. Silakan login kembali untuk melanjutkan.',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await _redirectToLogin();
+              },
+              child: const Text('Ke Halaman Login'),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      _isSessionExpiredDialogVisible = false;
+    }
+  }
+
+  Future<void> _redirectToLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('jwt_token');
+    await prefs.remove('user_id');
+    await prefs.remove('user_username');
+    await prefs.remove('user_role');
+
+    if (Get.isRegistered<UserController>()) {
+      final userController = Get.find<UserController>();
+      userController.clearUserData();
+      userController.changeMenu('Dashboard');
+    }
+
+    if (Get.isRegistered<GlobalNotificationService>()) {
+      await Get.find<GlobalNotificationService>().stopPolling(clearState: true);
+    }
+
+    if (!mounted) {
+      return;
+    }
+    context.replace(RouteName.loginScreen);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 800;
 
     return BlocListener<PaymentsBloc, PaymentsState>(
       listenWhen: (previous, current) =>
+          previous.errorMessage != current.errorMessage ||
           previous.actionErrorMessage != current.actionErrorMessage ||
           previous.actionSuccessMessage != current.actionSuccessMessage,
       listener: (context, state) {
+        if (state.hasUnauthenticatedError) {
+          _handleUnauthenticatedSession();
+          return;
+        }
+
         if (state.actionErrorMessage.isNotEmpty) {
           ScaffoldMessenger.of(
             context,

@@ -204,11 +204,11 @@ class PaymentsRepository {
   List<PaymentExportFilterOption> _parseBuildingOptions(List<dynamic> rawList) {
     return rawList
         .whereType<Map>()
-        .map((item) => item.cast<String, dynamic>())
+        .map((item) => _normalizeMap(item))
         .map((map) {
-          final id = _parseInt(map['id']);
-          final name = _asString(map['building_name']);
-          final code = _asString(map['building_code']);
+          final id = _parseInt(map['id'] ?? map['building_id']);
+          final name = _asString(map['building_name'] ?? map['name']);
+          final code = _asString(map['building_code'] ?? map['code']);
           final fallbackLabel = id > 0 ? 'Building #$id' : '';
           final label = [
             code,
@@ -227,14 +227,17 @@ class PaymentsRepository {
   List<PaymentExportFilterOption> _parseRoomOptions(List<dynamic> rawList) {
     return rawList
         .whereType<Map>()
-        .map((item) => item.cast<String, dynamic>())
+        .map((item) => _normalizeMap(item))
         .map((map) {
-          final id = _parseInt(map['id']);
-          final roomCode = _asString(map['room_code']);
+          final id = _parseInt(map['id'] ?? map['room_id']);
+          final roomCode = _asString(map['room_code'] ?? map['code']);
           final buildingRaw = map['building'];
-          final buildingName = buildingRaw is Map
-              ? _asString(buildingRaw['building_name'])
-              : '';
+          final buildingMap = buildingRaw is Map
+              ? _normalizeMap(buildingRaw)
+              : null;
+          final buildingName = buildingMap == null
+              ? ''
+              : _asString(buildingMap['building_name'] ?? buildingMap['name']);
           final fallbackLabel = id > 0 ? 'Room #$id' : '';
           final label = [
             buildingName,
@@ -253,11 +256,11 @@ class PaymentsRepository {
   List<PaymentExportFilterOption> _parseTenantOptions(List<dynamic> rawList) {
     return rawList
         .whereType<Map>()
-        .map((item) => item.cast<String, dynamic>())
+        .map((item) => _normalizeMap(item))
         .map((map) {
-          final id = _parseInt(map['id']);
-          final fullName = _asString(map['full_name']);
-          final tenantCode = _asString(map['tenant_code']);
+          final id = _parseInt(map['id'] ?? map['tenant_id']);
+          final fullName = _asString(map['full_name'] ?? map['name']);
+          final tenantCode = _asString(map['tenant_code'] ?? map['code']);
           final fallbackLabel = id > 0 ? 'Tenant #$id' : '';
           final label = [
             fullName,
@@ -271,6 +274,15 @@ class PaymentsRepository {
         })
         .whereType<PaymentExportFilterOption>()
         .toList(growable: false);
+  }
+
+  Map<String, dynamic> _normalizeMap(Map raw) {
+    final casted = raw.cast<String, dynamic>();
+    final nested = casted['data'];
+    if (nested is Map) {
+      return nested.cast<String, dynamic>();
+    }
+    return casted;
   }
 
   String _asString(dynamic value) {

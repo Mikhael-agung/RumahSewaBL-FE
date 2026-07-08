@@ -1,6 +1,16 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/controllers/payments_controller.dart';
 
+bool isUnauthenticatedMessage(String message) {
+  final normalized = message.trim().toLowerCase();
+  if (normalized.isEmpty) {
+    return false;
+  }
+  return normalized.contains('unauthenticated') ||
+      normalized.contains('unauthorized') ||
+      normalized.contains('token login tidak ditemukan');
+}
+
 class PaymentsBloc extends Bloc<PaymentsEvent, PaymentsState> {
   final PaymentsRepository _repository;
   PaymentsRepository get repository => _repository;
@@ -207,6 +217,10 @@ class PaymentsState {
     this.verifyingPaymentIds = const <String>{},
     this.isExporting = false,
   });
+
+  bool get hasUnauthenticatedError =>
+      isUnauthenticatedMessage(errorMessage) ||
+      isUnauthenticatedMessage(actionErrorMessage);
 
   PaymentsState copyWith({
     bool? isLoading,

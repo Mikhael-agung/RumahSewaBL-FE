@@ -249,139 +249,290 @@ class _PaymentExportFilterDialogState extends State<PaymentExportFilterDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Filter Export Pembayaran'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildApiDropdownField(
-              label: 'Building',
-              value: _selectedBuildingId,
-              items: _buildingOptions,
-              allLabel: 'Semua Building',
-              onChanged: (value) => setState(() => _selectedBuildingId = value),
-            ),
-            const SizedBox(height: 10),
-            _buildApiDropdownField(
-              label: 'Room',
-              value: _selectedRoomId,
-              items: _roomOptions,
-              allLabel: 'Semua Room',
-              onChanged: (value) => setState(() => _selectedRoomId = value),
-            ),
-            const SizedBox(height: 10),
-            _buildApiDropdownField(
-              label: 'Tenant',
-              value: _selectedTenantId,
-              items: _tenantOptions,
-              allLabel: 'Semua Tenant',
-              onChanged: (value) => setState(() => _selectedTenantId = value),
-            ),
-            if (_filterOptionError.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.warning_amber_rounded,
-                    size: 16,
-                    color: Color(0xFFB45309),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      _filterOptionError,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF92400E),
-                        fontWeight: FontWeight.w500,
+    final dialogWidth = MediaQuery.of(context).size.width > 860 ? 760.0 : null;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: dialogWidth ?? 760),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: Container(
+            color: const Color(0xFFF8FAFD),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(28, 22, 20, 20),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Filter Ekspor Pembayaran',
+                          style: TextStyle(
+                            fontSize: 46 / 2,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF101828),
+                          ),
+                        ),
                       ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(null),
+                        icon: const Icon(Icons.close_rounded, size: 30),
+                        color: const Color(0xFF6B7280),
+                        splashRadius: 20,
+                      ),
+                    ],
+                  ),
+                ),
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(28, 0, 28, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildFieldLabel('BUILDING'),
+                        const SizedBox(height: 8),
+                        _buildApiDropdownField(
+                          value: _selectedBuildingId,
+                          items: _buildingOptions,
+                          allLabel: 'Semua Gedung',
+                          onChanged: (value) =>
+                              setState(() => _selectedBuildingId = value),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildFieldLabel('ROOM'),
+                                  const SizedBox(height: 8),
+                                  _buildApiDropdownField(
+                                    value: _selectedRoomId,
+                                    items: _roomOptions,
+                                    allLabel: 'Semua Kamar',
+                                    onChanged: (value) =>
+                                        setState(() => _selectedRoomId = value),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildFieldLabel('TENANT'),
+                                  const SizedBox(height: 8),
+                                  _buildApiDropdownField(
+                                    value: _selectedTenantId,
+                                    items: _tenantOptions,
+                                    allLabel: 'Semua Penyewa',
+                                    onChanged: (value) => setState(
+                                      () => _selectedTenantId = value,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_filterOptionError.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.info_outline_rounded,
+                                size: 18,
+                                color: Color(0xFFB45309),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _filterOptionError,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF92400E),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: _isLoadingFilterOptions
+                                    ? null
+                                    : _loadFilterOptions,
+                                child: const Text('Coba lagi'),
+                              ),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildFieldLabel('BULAN (1-12)'),
+                                  const SizedBox(height: 8),
+                                  _buildNumberField(
+                                    controller: _monthController,
+                                    hintText: '01',
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildFieldLabel('TAHUN'),
+                                  const SizedBox(height: 8),
+                                  _buildNumberField(
+                                    controller: _yearController,
+                                    hintText: '2024',
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _buildFieldLabel('STATUS PEMBAYARAN'),
+                        const SizedBox(height: 8),
+                        _buildStatusDropdownField(),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildFieldLabel('TANGGAL MULAI'),
+                                  const SizedBox(height: 8),
+                                  _buildDateField(
+                                    value: _dateFrom,
+                                    onSelect: (value) {
+                                      setState(() => _dateFrom = value);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildFieldLabel('TANGGAL AKHIR'),
+                                  const SizedBox(height: 8),
+                                  _buildDateField(
+                                    value: _dateTo,
+                                    onSelect: (value) {
+                                      setState(() => _dateTo = value);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE9EDF3),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: const Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.info_outline_rounded,
+                                color: Color(0xFF0D5C8E),
+                                size: 20,
+                              ),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Semua field opsional. Isi satu atau lebih filter sesuai kebutuhan untuk menghasilkan laporan yang spesifik.',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF4B5563),
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  TextButton(
-                    onPressed: _isLoadingFilterOptions
-                        ? null
-                        : _loadFilterOptions,
-                    child: const Text('Coba lagi'),
+                ),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 18,
                   ),
-                ],
-              ),
-            ],
-            const SizedBox(height: 10),
-            _buildNumberField(
-              controller: _monthController,
-              label: 'Bulan (1-12)',
-            ),
-            const SizedBox(height: 10),
-            _buildNumberField(controller: _yearController, label: 'Tahun'),
-            const SizedBox(height: 10),
-            DropdownButtonFormField<PaymentExportStatus?>(
-              value: _status,
-              decoration: const InputDecoration(
-                labelText: 'Status',
-                border: OutlineInputBorder(),
-              ),
-              items: const [
-                DropdownMenuItem<PaymentExportStatus?>(
-                  value: null,
-                  child: Text('Kosongkan (tanpa filter status)'),
-                ),
-                DropdownMenuItem<PaymentExportStatus?>(
-                  value: PaymentExportStatus.all,
-                  child: Text('all'),
-                ),
-                DropdownMenuItem<PaymentExportStatus?>(
-                  value: PaymentExportStatus.pendingVerification,
-                  child: Text('menunggu_verifikasi'),
-                ),
-                DropdownMenuItem<PaymentExportStatus?>(
-                  value: PaymentExportStatus.verified,
-                  child: Text('terverifikasi'),
-                ),
-                DropdownMenuItem<PaymentExportStatus?>(
-                  value: PaymentExportStatus.rejected,
-                  child: Text('ditolak'),
+                  decoration: const BoxDecoration(color: Color(0xFFEFF2F7)),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(null),
+                        child: const Text(
+                          'Batal',
+                          style: TextStyle(
+                            fontSize: 17,
+                            color: Color(0xFF4B5563),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      ElevatedButton.icon(
+                        onPressed: _isLoadingFilterOptions ? null : _submit,
+                        icon: const Icon(
+                          Icons.file_download_outlined,
+                          size: 18,
+                        ),
+                        label: const Text('Ekspor Data'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF005D90),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 18 / 1.4,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
-              onChanged: (value) => setState(() => _status = value),
             ),
-            const SizedBox(height: 10),
-            _buildDateField(
-              label: 'Tanggal Mulai',
-              value: _dateFrom,
-              onSelect: (value) => setState(() => _dateFrom = value),
-            ),
-            const SizedBox(height: 10),
-            _buildDateField(
-              label: 'Tanggal Akhir',
-              value: _dateTo,
-              onSelect: (value) => setState(() => _dateTo = value),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Semua field opsional. Isi satu atau lebih filter sesuai kebutuhan.',
-              style: TextStyle(
-                fontSize: 12,
-                color: Color(0xFF6B7280),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(null),
-          child: const Text('Batal'),
-        ),
-        TextButton(onPressed: _resetFields, child: const Text('Reset')),
-        FilledButton(
-          onPressed: _isLoadingFilterOptions ? null : _submit,
-          child: const Text('Ekspor'),
-        ),
-      ],
     );
   }
 
@@ -429,20 +580,21 @@ class _PaymentExportFilterDialogState extends State<PaymentExportFilterDialog> {
 
   Widget _buildNumberField({
     required TextEditingController controller,
-    required String label,
+    required String hintText,
   }) {
     return TextField(
       controller: controller,
       keyboardType: TextInputType.number,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
+      style: const TextStyle(
+        fontSize: 16,
+        color: Color(0xFF1F2937),
+        fontWeight: FontWeight.w600,
       ),
+      decoration: _fieldDecoration(hintText: hintText),
     );
   }
 
   Widget _buildApiDropdownField({
-    required String label,
     required int? value,
     required List<PaymentExportFilterOption> items,
     required String allLabel,
@@ -450,9 +602,8 @@ class _PaymentExportFilterDialogState extends State<PaymentExportFilterDialog> {
   }) {
     if (_isLoadingFilterOptions) {
       return InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
+        decoration: _fieldDecoration(
+          hintText: 'Memuat data...',
           suffixIcon: const Padding(
             padding: EdgeInsets.all(10),
             child: SizedBox(
@@ -462,10 +613,7 @@ class _PaymentExportFilterDialogState extends State<PaymentExportFilterDialog> {
             ),
           ),
         ),
-        child: const Text(
-          'Memuat data...',
-          style: TextStyle(color: Color(0xFF6B7280)),
-        ),
+        child: const SizedBox.shrink(),
       );
     }
 
@@ -473,29 +621,66 @@ class _PaymentExportFilterDialogState extends State<PaymentExportFilterDialog> {
     return DropdownButtonFormField<int?>(
       value: validValue,
       isExpanded: true,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
+      icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 24),
+      style: const TextStyle(
+        fontSize: 16,
+        color: Color(0xFF1F2937),
+        fontWeight: FontWeight.w600,
       ),
+      decoration: _fieldDecoration(),
       items: [
         DropdownMenuItem<int?>(value: null, child: Text(allLabel)),
         ...items.map(
-          (item) => DropdownMenuItem<int?>(
-            value: item.id,
-            child: Text(item.label),
-          ),
+          (item) =>
+              DropdownMenuItem<int?>(value: item.id, child: Text(item.label)),
         ),
       ],
       onChanged: onChanged,
     );
   }
 
+  Widget _buildStatusDropdownField() {
+    return DropdownButtonFormField<PaymentExportStatus?>(
+      value: _status,
+      isExpanded: true,
+      icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 24),
+      style: const TextStyle(
+        fontSize: 16,
+        color: Color(0xFF1F2937),
+        fontWeight: FontWeight.w600,
+      ),
+      decoration: _fieldDecoration(),
+      items: const [
+        DropdownMenuItem<PaymentExportStatus?>(
+          value: null,
+          child: Text('Semua Status'),
+        ),
+        DropdownMenuItem<PaymentExportStatus?>(
+          value: PaymentExportStatus.all,
+          child: Text('Semua Status (all)'),
+        ),
+        DropdownMenuItem<PaymentExportStatus?>(
+          value: PaymentExportStatus.pendingVerification,
+          child: Text('Menunggu Verifikasi'),
+        ),
+        DropdownMenuItem<PaymentExportStatus?>(
+          value: PaymentExportStatus.verified,
+          child: Text('Terverifikasi'),
+        ),
+        DropdownMenuItem<PaymentExportStatus?>(
+          value: PaymentExportStatus.rejected,
+          child: Text('Ditolak'),
+        ),
+      ],
+      onChanged: (value) => setState(() => _status = value),
+    );
+  }
+
   Widget _buildDateField({
-    required String label,
     required DateTime? value,
     required ValueChanged<DateTime?> onSelect,
   }) {
-    final formatter = DateFormat('dd MMM yyyy');
+    final formatter = DateFormat('dd/MM/yyyy');
     return InkWell(
       onTap: () async {
         final now = DateTime.now();
@@ -511,37 +696,24 @@ class _PaymentExportFilterDialogState extends State<PaymentExportFilterDialog> {
         onSelect(picked);
       },
       child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-          suffixIcon: value == null
-              ? null
-              : IconButton(
-                  icon: const Icon(Icons.close, size: 16),
-                  onPressed: () => onSelect(null),
-                ),
+        decoration: _fieldDecoration(
+          hintText: 'dd/mm/yyyy',
+          suffixIcon: const Icon(
+            Icons.calendar_month_outlined,
+            size: 20,
+            color: Color(0xFF1F2937),
+          ),
         ),
         child: Text(
-          value == null ? 'Pilih tanggal' : formatter.format(value),
-          style: TextStyle(
-            color: value == null ? const Color(0xFF9CA3AF) : Colors.black87,
+          value == null ? 'dd/mm/yyyy' : formatter.format(value),
+          style: const TextStyle(
+            color: Color(0xFF1F2937),
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
     );
-  }
-
-  void _resetFields() {
-    setState(() {
-      _monthController.clear();
-      _selectedBuildingId = null;
-      _selectedRoomId = null;
-      _selectedTenantId = null;
-      _yearController.clear();
-      _dateFrom = null;
-      _dateTo = null;
-      _status = null;
-    });
   }
 
   void _submit() {
@@ -633,6 +805,45 @@ class _PaymentExportFilterDialogState extends State<PaymentExportFilterDialog> {
     }
     final hasMatch = items.any((item) => item.id == value);
     return hasMatch ? value : null;
+  }
+
+  Widget _buildFieldLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: Color(0xFF0B4C7A),
+        fontSize: 14,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.3,
+      ),
+    );
+  }
+
+  InputDecoration _fieldDecoration({String? hintText, Widget? suffixIcon}) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(
+        fontSize: 16,
+        color: Color(0xFF6B7280),
+        fontWeight: FontWeight.w500,
+      ),
+      filled: true,
+      fillColor: const Color(0xFFD8E5F9),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      suffixIcon: suffixIcon,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(999),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(999),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(999),
+        borderSide: const BorderSide(color: Color(0xFF9DB8E8), width: 1.2),
+      ),
+    );
   }
 }
 
