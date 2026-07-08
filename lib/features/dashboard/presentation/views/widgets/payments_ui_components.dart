@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/constants/colors.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/controllers/payments_controller.dart';
 import 'package:rumah_sewa_biru_laut_fe/utils/helpers/currency_format.dart';
 
 class PaymentsHeaderSection extends StatelessWidget {
   final bool isMobile;
+  final VoidCallback onExportPressed;
+  final bool isExporting;
 
-  const PaymentsHeaderSection({super.key, required this.isMobile});
+  const PaymentsHeaderSection({
+    super.key,
+    required this.isMobile,
+    required this.onExportPressed,
+    this.isExporting = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +39,8 @@ class PaymentsHeaderSection extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
+              const SizedBox(height: 14),
+              _exportButton(isCompact: true),
             ],
           )
         : Row(
@@ -61,8 +71,53 @@ class PaymentsHeaderSection extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(width: 18),
+              _exportButton(isCompact: false),
             ],
           );
+  }
+
+  Widget _exportButton({required bool isCompact}) {
+    return Container(
+      height: isCompact ? 42 : 46,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: InkWell(
+        onTap: isExporting ? null : onExportPressed,
+        borderRadius: BorderRadius.circular(999),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isExporting) ...[
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ] else ...[
+              const Icon(
+                Icons.file_download_outlined,
+                size: 18,
+                color: Color(0xFF111827),
+              ),
+            ],
+            const SizedBox(width: 8),
+            Text(
+              isExporting ? 'Mengekspor...' : 'Ekspor Data',
+              style: TextStyle(
+                fontSize: isCompact ? 13 : 15,
+                color: const Color(0xFF111827),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -135,11 +190,669 @@ class PaymentsFilterBar extends StatelessWidget {
   }
 }
 
+class PaymentExportFilterDialog extends StatefulWidget {
+  final PaymentExportQuery initialQuery;
+  final PaymentsRepository? repository;
+
+  const PaymentExportFilterDialog({
+    super.key,
+    required this.initialQuery,
+    this.repository,
+  });
+
+  @override
+  State<PaymentExportFilterDialog> createState() =>
+      _PaymentExportFilterDialogState();
+}
+
+class _PaymentExportFilterDialogState extends State<PaymentExportFilterDialog> {
+  late final TextEditingController _monthController;
+  late final TextEditingController _yearController;
+  late final PaymentsRepository _repository;
+  bool _isLoadingFilterOptions = true;
+  String _filterOptionError = '';
+  List<PaymentExportFilterOption> _buildingOptions = const [];
+  List<PaymentExportFilterOption> _roomOptions = const [];
+  List<PaymentExportFilterOption> _tenantOptions = const [];
+  int? _selectedBuildingId;
+  int? _selectedRoomId;
+  int? _selectedTenantId;
+  DateTime? _dateFrom;
+  DateTime? _dateTo;
+  PaymentExportStatus? _status;
+
+  @override
+  void initState() {
+    super.initState();
+    _monthController = TextEditingController(
+      text: _toInputValue(widget.initialQuery.month),
+    );
+    _yearController = TextEditingController(
+      text: _toInputValue(widget.initialQuery.year),
+    );
+    _repository = widget.repository ?? PaymentsRepository();
+    _selectedBuildingId = widget.initialQuery.buildingId;
+    _selectedRoomId = widget.initialQuery.roomId;
+    _selectedTenantId = widget.initialQuery.tenantId;
+    _status = widget.initialQuery.status;
+    _dateFrom = _parseDate(widget.initialQuery.dateFrom);
+    _dateTo = _parseDate(widget.initialQuery.dateTo);
+    _loadFilterOptions();
+  }
+
+  @override
+  void dispose() {
+    _monthController.dispose();
+    _yearController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dialogWidth = MediaQuery.of(context).size.width > 860 ? 760.0 : null;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: dialogWidth ?? 760),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: Container(
+            color: const Color(0xFFF8FAFD),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(28, 22, 20, 20),
+                  child: Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Filter Ekspor Pembayaran',
+                          style: TextStyle(
+                            fontSize: 46 / 2,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF101828),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(null),
+                        icon: const Icon(Icons.close_rounded, size: 30),
+                        color: const Color(0xFF6B7280),
+                        splashRadius: 20,
+                      ),
+                    ],
+                  ),
+                ),
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(28, 0, 28, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildFieldLabel('BUILDING'),
+                        const SizedBox(height: 8),
+                        _buildApiDropdownField(
+                          value: _selectedBuildingId,
+                          items: _buildingOptions,
+                          allLabel: 'Semua Gedung',
+                          onChanged: (value) =>
+                              setState(() => _selectedBuildingId = value),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildFieldLabel('ROOM'),
+                                  const SizedBox(height: 8),
+                                  _buildApiDropdownField(
+                                    value: _selectedRoomId,
+                                    items: _roomOptions,
+                                    allLabel: 'Semua Kamar',
+                                    onChanged: (value) =>
+                                        setState(() => _selectedRoomId = value),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildFieldLabel('TENANT'),
+                                  const SizedBox(height: 8),
+                                  _buildApiDropdownField(
+                                    value: _selectedTenantId,
+                                    items: _tenantOptions,
+                                    allLabel: 'Semua Penyewa',
+                                    onChanged: (value) => setState(
+                                      () => _selectedTenantId = value,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_filterOptionError.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.info_outline_rounded,
+                                size: 18,
+                                color: Color(0xFFB45309),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _filterOptionError,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF92400E),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: _isLoadingFilterOptions
+                                    ? null
+                                    : _loadFilterOptions,
+                                child: const Text('Coba lagi'),
+                              ),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildFieldLabel('BULAN (1-12)'),
+                                  const SizedBox(height: 8),
+                                  _buildNumberField(
+                                    controller: _monthController,
+                                    hintText: '01',
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildFieldLabel('TAHUN'),
+                                  const SizedBox(height: 8),
+                                  _buildNumberField(
+                                    controller: _yearController,
+                                    hintText: '2024',
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _buildFieldLabel('STATUS PEMBAYARAN'),
+                        const SizedBox(height: 8),
+                        _buildStatusDropdownField(),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildFieldLabel('TANGGAL MULAI'),
+                                  const SizedBox(height: 8),
+                                  _buildDateField(
+                                    value: _dateFrom,
+                                    onSelect: (value) {
+                                      setState(() => _dateFrom = value);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildFieldLabel('TANGGAL AKHIR'),
+                                  const SizedBox(height: 8),
+                                  _buildDateField(
+                                    value: _dateTo,
+                                    onSelect: (value) {
+                                      setState(() => _dateTo = value);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE9EDF3),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: const Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.info_outline_rounded,
+                                color: Color(0xFF0D5C8E),
+                                size: 20,
+                              ),
+                              SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Semua field opsional. Isi satu atau lebih filter sesuai kebutuhan untuk menghasilkan laporan yang spesifik.',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF4B5563),
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 28,
+                    vertical: 18,
+                  ),
+                  decoration: const BoxDecoration(color: Color(0xFFEFF2F7)),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(null),
+                        child: const Text(
+                          'Batal',
+                          style: TextStyle(
+                            fontSize: 17,
+                            color: Color(0xFF4B5563),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      ElevatedButton.icon(
+                        onPressed: _isLoadingFilterOptions ? null : _submit,
+                        icon: const Icon(
+                          Icons.file_download_outlined,
+                          size: 18,
+                        ),
+                        label: const Text('Ekspor Data'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF005D90),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 18 / 1.4,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _loadFilterOptions() async {
+    setState(() {
+      _isLoadingFilterOptions = true;
+      _filterOptionError = '';
+    });
+
+    try {
+      final options = await _repository.fetchExportFilterOptions();
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _buildingOptions = options.buildings;
+        _roomOptions = options.rooms;
+        _tenantOptions = options.tenants;
+        _selectedBuildingId = _resolveSelectedValue(
+          _selectedBuildingId,
+          _buildingOptions,
+        );
+        _selectedRoomId = _resolveSelectedValue(_selectedRoomId, _roomOptions);
+        _selectedTenantId = _resolveSelectedValue(
+          _selectedTenantId,
+          _tenantOptions,
+        );
+        _isLoadingFilterOptions = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _buildingOptions = const [];
+        _roomOptions = const [];
+        _tenantOptions = const [];
+        _isLoadingFilterOptions = false;
+        _filterOptionError =
+            'Gagal memuat daftar Building/Room/Tenant dari API.';
+      });
+    }
+  }
+
+  Widget _buildNumberField({
+    required TextEditingController controller,
+    required String hintText,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      style: const TextStyle(
+        fontSize: 16,
+        color: Color(0xFF1F2937),
+        fontWeight: FontWeight.w600,
+      ),
+      decoration: _fieldDecoration(hintText: hintText),
+    );
+  }
+
+  Widget _buildApiDropdownField({
+    required int? value,
+    required List<PaymentExportFilterOption> items,
+    required String allLabel,
+    required ValueChanged<int?> onChanged,
+  }) {
+    if (_isLoadingFilterOptions) {
+      return InputDecorator(
+        decoration: _fieldDecoration(
+          hintText: 'Memuat data...',
+          suffixIcon: const Padding(
+            padding: EdgeInsets.all(10),
+            child: SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        ),
+        child: const SizedBox.shrink(),
+      );
+    }
+
+    final validValue = _resolveSelectedValue(value, items);
+    return DropdownButtonFormField<int?>(
+      value: validValue,
+      isExpanded: true,
+      icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 24),
+      style: const TextStyle(
+        fontSize: 16,
+        color: Color(0xFF1F2937),
+        fontWeight: FontWeight.w600,
+      ),
+      decoration: _fieldDecoration(),
+      items: [
+        DropdownMenuItem<int?>(value: null, child: Text(allLabel)),
+        ...items.map(
+          (item) =>
+              DropdownMenuItem<int?>(value: item.id, child: Text(item.label)),
+        ),
+      ],
+      onChanged: onChanged,
+    );
+  }
+
+  Widget _buildStatusDropdownField() {
+    return DropdownButtonFormField<PaymentExportStatus?>(
+      value: _status,
+      isExpanded: true,
+      icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 24),
+      style: const TextStyle(
+        fontSize: 16,
+        color: Color(0xFF1F2937),
+        fontWeight: FontWeight.w600,
+      ),
+      decoration: _fieldDecoration(),
+      items: const [
+        DropdownMenuItem<PaymentExportStatus?>(
+          value: null,
+          child: Text('Semua Status'),
+        ),
+        DropdownMenuItem<PaymentExportStatus?>(
+          value: PaymentExportStatus.all,
+          child: Text('Semua Status (all)'),
+        ),
+        DropdownMenuItem<PaymentExportStatus?>(
+          value: PaymentExportStatus.pendingVerification,
+          child: Text('Menunggu Verifikasi'),
+        ),
+        DropdownMenuItem<PaymentExportStatus?>(
+          value: PaymentExportStatus.verified,
+          child: Text('Terverifikasi'),
+        ),
+        DropdownMenuItem<PaymentExportStatus?>(
+          value: PaymentExportStatus.rejected,
+          child: Text('Ditolak'),
+        ),
+      ],
+      onChanged: (value) => setState(() => _status = value),
+    );
+  }
+
+  Widget _buildDateField({
+    required DateTime? value,
+    required ValueChanged<DateTime?> onSelect,
+  }) {
+    final formatter = DateFormat('dd/MM/yyyy');
+    return InkWell(
+      onTap: () async {
+        final now = DateTime.now();
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: value ?? now,
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2100),
+        );
+        if (!mounted) {
+          return;
+        }
+        onSelect(picked);
+      },
+      child: InputDecorator(
+        decoration: _fieldDecoration(
+          hintText: 'dd/mm/yyyy',
+          suffixIcon: const Icon(
+            Icons.calendar_month_outlined,
+            size: 20,
+            color: Color(0xFF1F2937),
+          ),
+        ),
+        child: Text(
+          value == null ? 'dd/mm/yyyy' : formatter.format(value),
+          style: const TextStyle(
+            color: Color(0xFF1F2937),
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _submit() {
+    final month = _parseIntField(_monthController.text, 'Bulan');
+    final year = _parseIntField(_yearController.text, 'Tahun');
+
+    if (month == null || year == null) {
+      return;
+    }
+
+    if (month != -1 && (month < 1 || month > 12)) {
+      _showValidationError('Bulan harus di antara 1 sampai 12.');
+      return;
+    }
+    if (year != -1 && (year < 2000 || year > 2100)) {
+      _showValidationError('Tahun harus di antara 2000 sampai 2100.');
+      return;
+    }
+    if (_dateFrom != null && _dateTo != null && _dateFrom!.isAfter(_dateTo!)) {
+      _showValidationError(
+        'Tanggal mulai tidak boleh lebih besar dari tanggal akhir.',
+      );
+      return;
+    }
+
+    final query = PaymentExportQuery(
+      buildingId: _selectedBuildingId,
+      month: month == -1 ? null : month,
+      roomId: _selectedRoomId,
+      tenantId: _selectedTenantId,
+      year: year == -1 ? null : year,
+      status: _status,
+      dateFrom: _dateFrom?.toIso8601String(),
+      dateTo: _dateTo == null
+          ? null
+          : DateTime(
+              _dateTo!.year,
+              _dateTo!.month,
+              _dateTo!.day,
+              23,
+              59,
+              59,
+            ).toIso8601String(),
+    );
+
+    Navigator.of(context).pop(query);
+  }
+
+  int? _parseIntField(String raw, String fieldLabel) {
+    final value = raw.trim();
+    if (value.isEmpty) {
+      return -1;
+    }
+
+    final parsed = int.tryParse(value);
+    if (parsed == null) {
+      _showValidationError('$fieldLabel harus berupa angka.');
+      return null;
+    }
+    return parsed;
+  }
+
+  void _showValidationError(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  String _toInputValue(int? value) {
+    if (value == null) {
+      return '';
+    }
+    return value.toString();
+  }
+
+  DateTime? _parseDate(String? raw) {
+    if (raw == null || raw.trim().isEmpty) {
+      return null;
+    }
+    return DateTime.tryParse(raw);
+  }
+
+  int? _resolveSelectedValue(
+    int? value,
+    List<PaymentExportFilterOption> items,
+  ) {
+    if (value == null) {
+      return null;
+    }
+    final hasMatch = items.any((item) => item.id == value);
+    return hasMatch ? value : null;
+  }
+
+  Widget _buildFieldLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        color: Color(0xFF0B4C7A),
+        fontSize: 14,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.3,
+      ),
+    );
+  }
+
+  InputDecoration _fieldDecoration({String? hintText, Widget? suffixIcon}) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(
+        fontSize: 16,
+        color: Color(0xFF6B7280),
+        fontWeight: FontWeight.w500,
+      ),
+      filled: true,
+      fillColor: const Color(0xFFD8E5F9),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      suffixIcon: suffixIcon,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(999),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(999),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(999),
+        borderSide: const BorderSide(color: Color(0xFF9DB8E8), width: 1.2),
+      ),
+    );
+  }
+}
+
 class PaymentDesktopTable extends StatelessWidget {
   final List<PaymentVerificationItem> entries;
   final VoidCallback onReload;
   final ValueChanged<PaymentVerificationItem> onShowProofFile;
   final ValueChanged<PaymentVerificationItem> onVerifyPayment;
+  final ValueChanged<PaymentVerificationItem> onRejectPayment;
   final Set<String> verifyingPaymentIds;
 
   const PaymentDesktopTable({
@@ -148,6 +861,7 @@ class PaymentDesktopTable extends StatelessWidget {
     required this.onReload,
     required this.onShowProofFile,
     required this.onVerifyPayment,
+    required this.onRejectPayment,
     required this.verifyingPaymentIds,
   });
 
@@ -234,6 +948,7 @@ class PaymentDesktopTable extends StatelessWidget {
                 status: entry.status,
                 onViewImage: () => onShowProofFile(entry),
                 onVerify: () => onVerifyPayment(entry),
+                onReject: () => onRejectPayment(entry),
                 isVerifying: verifyingPaymentIds.contains(entry.paymentId),
               ),
             ),
@@ -276,6 +991,7 @@ class PaymentMobileList extends StatelessWidget {
   final List<PaymentVerificationItem> entries;
   final VoidCallback onReload;
   final ValueChanged<PaymentVerificationItem> onVerifyPayment;
+  final ValueChanged<PaymentVerificationItem> onRejectPayment;
   final Set<String> verifyingPaymentIds;
 
   const PaymentMobileList({
@@ -283,6 +999,7 @@ class PaymentMobileList extends StatelessWidget {
     required this.entries,
     required this.onReload,
     required this.onVerifyPayment,
+    required this.onRejectPayment,
     required this.verifyingPaymentIds,
   });
 
@@ -354,6 +1071,7 @@ class PaymentMobileList extends StatelessWidget {
                   child: PaymentActionWidget(
                     status: entry.status,
                     onVerify: () => onVerifyPayment(entry),
+                    onReject: () => onRejectPayment(entry),
                     isVerifying: verifyingPaymentIds.contains(entry.paymentId),
                   ),
                 ),
@@ -446,7 +1164,7 @@ class PaymentActionWidget extends StatelessWidget {
             backgroundColor: const Color(0xFFFFF1F2),
             textColor: const Color(0xFFDC2626),
             borderColor: const Color(0xFFFECACA),
-            onTap: onReject,
+            onTap: isVerifying ? null : onReject,
           ),
         ],
       );
