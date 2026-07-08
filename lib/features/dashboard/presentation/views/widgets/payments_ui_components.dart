@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/constants/colors.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/controllers/payments_controller.dart';
 import 'package:rumah_sewa_biru_laut_fe/utils/helpers/currency_format.dart';
@@ -186,6 +187,452 @@ class PaymentsFilterBar extends StatelessWidget {
       }
     }
     return widgets;
+  }
+}
+
+class PaymentExportFilterDialog extends StatefulWidget {
+  final PaymentExportQuery initialQuery;
+  final PaymentsRepository? repository;
+
+  const PaymentExportFilterDialog({
+    super.key,
+    required this.initialQuery,
+    this.repository,
+  });
+
+  @override
+  State<PaymentExportFilterDialog> createState() =>
+      _PaymentExportFilterDialogState();
+}
+
+class _PaymentExportFilterDialogState extends State<PaymentExportFilterDialog> {
+  late final TextEditingController _monthController;
+  late final TextEditingController _yearController;
+  late final PaymentsRepository _repository;
+  bool _isLoadingFilterOptions = true;
+  String _filterOptionError = '';
+  List<PaymentExportFilterOption> _buildingOptions = const [];
+  List<PaymentExportFilterOption> _roomOptions = const [];
+  List<PaymentExportFilterOption> _tenantOptions = const [];
+  int? _selectedBuildingId;
+  int? _selectedRoomId;
+  int? _selectedTenantId;
+  DateTime? _dateFrom;
+  DateTime? _dateTo;
+  PaymentExportStatus? _status;
+
+  @override
+  void initState() {
+    super.initState();
+    _monthController = TextEditingController(
+      text: _toInputValue(widget.initialQuery.month),
+    );
+    _yearController = TextEditingController(
+      text: _toInputValue(widget.initialQuery.year),
+    );
+    _repository = widget.repository ?? PaymentsRepository();
+    _selectedBuildingId = widget.initialQuery.buildingId;
+    _selectedRoomId = widget.initialQuery.roomId;
+    _selectedTenantId = widget.initialQuery.tenantId;
+    _status = widget.initialQuery.status;
+    _dateFrom = _parseDate(widget.initialQuery.dateFrom);
+    _dateTo = _parseDate(widget.initialQuery.dateTo);
+    _loadFilterOptions();
+  }
+
+  @override
+  void dispose() {
+    _monthController.dispose();
+    _yearController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Filter Export Pembayaran'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildApiDropdownField(
+              label: 'Building',
+              value: _selectedBuildingId,
+              items: _buildingOptions,
+              allLabel: 'Semua Building',
+              onChanged: (value) => setState(() => _selectedBuildingId = value),
+            ),
+            const SizedBox(height: 10),
+            _buildApiDropdownField(
+              label: 'Room',
+              value: _selectedRoomId,
+              items: _roomOptions,
+              allLabel: 'Semua Room',
+              onChanged: (value) => setState(() => _selectedRoomId = value),
+            ),
+            const SizedBox(height: 10),
+            _buildApiDropdownField(
+              label: 'Tenant',
+              value: _selectedTenantId,
+              items: _tenantOptions,
+              allLabel: 'Semua Tenant',
+              onChanged: (value) => setState(() => _selectedTenantId = value),
+            ),
+            if (_filterOptionError.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    size: 16,
+                    color: Color(0xFFB45309),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      _filterOptionError,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF92400E),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _isLoadingFilterOptions
+                        ? null
+                        : _loadFilterOptions,
+                    child: const Text('Coba lagi'),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 10),
+            _buildNumberField(
+              controller: _monthController,
+              label: 'Bulan (1-12)',
+            ),
+            const SizedBox(height: 10),
+            _buildNumberField(controller: _yearController, label: 'Tahun'),
+            const SizedBox(height: 10),
+            DropdownButtonFormField<PaymentExportStatus?>(
+              value: _status,
+              decoration: const InputDecoration(
+                labelText: 'Status',
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem<PaymentExportStatus?>(
+                  value: null,
+                  child: Text('Kosongkan (tanpa filter status)'),
+                ),
+                DropdownMenuItem<PaymentExportStatus?>(
+                  value: PaymentExportStatus.all,
+                  child: Text('all'),
+                ),
+                DropdownMenuItem<PaymentExportStatus?>(
+                  value: PaymentExportStatus.pendingVerification,
+                  child: Text('menunggu_verifikasi'),
+                ),
+                DropdownMenuItem<PaymentExportStatus?>(
+                  value: PaymentExportStatus.verified,
+                  child: Text('terverifikasi'),
+                ),
+                DropdownMenuItem<PaymentExportStatus?>(
+                  value: PaymentExportStatus.rejected,
+                  child: Text('ditolak'),
+                ),
+              ],
+              onChanged: (value) => setState(() => _status = value),
+            ),
+            const SizedBox(height: 10),
+            _buildDateField(
+              label: 'Tanggal Mulai',
+              value: _dateFrom,
+              onSelect: (value) => setState(() => _dateFrom = value),
+            ),
+            const SizedBox(height: 10),
+            _buildDateField(
+              label: 'Tanggal Akhir',
+              value: _dateTo,
+              onSelect: (value) => setState(() => _dateTo = value),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Semua field opsional. Isi satu atau lebih filter sesuai kebutuhan.',
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFF6B7280),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('Batal'),
+        ),
+        TextButton(onPressed: _resetFields, child: const Text('Reset')),
+        FilledButton(
+          onPressed: _isLoadingFilterOptions ? null : _submit,
+          child: const Text('Ekspor'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _loadFilterOptions() async {
+    setState(() {
+      _isLoadingFilterOptions = true;
+      _filterOptionError = '';
+    });
+
+    try {
+      final options = await _repository.fetchExportFilterOptions();
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _buildingOptions = options.buildings;
+        _roomOptions = options.rooms;
+        _tenantOptions = options.tenants;
+        _selectedBuildingId = _resolveSelectedValue(
+          _selectedBuildingId,
+          _buildingOptions,
+        );
+        _selectedRoomId = _resolveSelectedValue(_selectedRoomId, _roomOptions);
+        _selectedTenantId = _resolveSelectedValue(
+          _selectedTenantId,
+          _tenantOptions,
+        );
+        _isLoadingFilterOptions = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _buildingOptions = const [];
+        _roomOptions = const [];
+        _tenantOptions = const [];
+        _isLoadingFilterOptions = false;
+        _filterOptionError =
+            'Gagal memuat daftar Building/Room/Tenant dari API.';
+      });
+    }
+  }
+
+  Widget _buildNumberField({
+    required TextEditingController controller,
+    required String label,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+    );
+  }
+
+  Widget _buildApiDropdownField({
+    required String label,
+    required int? value,
+    required List<PaymentExportFilterOption> items,
+    required String allLabel,
+    required ValueChanged<int?> onChanged,
+  }) {
+    if (_isLoadingFilterOptions) {
+      return InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          suffixIcon: const Padding(
+            padding: EdgeInsets.all(10),
+            child: SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        ),
+        child: const Text(
+          'Memuat data...',
+          style: TextStyle(color: Color(0xFF6B7280)),
+        ),
+      );
+    }
+
+    final validValue = _resolveSelectedValue(value, items);
+    return DropdownButtonFormField<int?>(
+      value: validValue,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+      items: [
+        DropdownMenuItem<int?>(value: null, child: Text(allLabel)),
+        ...items.map(
+          (item) => DropdownMenuItem<int?>(
+            value: item.id,
+            child: Text(item.label),
+          ),
+        ),
+      ],
+      onChanged: onChanged,
+    );
+  }
+
+  Widget _buildDateField({
+    required String label,
+    required DateTime? value,
+    required ValueChanged<DateTime?> onSelect,
+  }) {
+    final formatter = DateFormat('dd MMM yyyy');
+    return InkWell(
+      onTap: () async {
+        final now = DateTime.now();
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: value ?? now,
+          firstDate: DateTime(2000),
+          lastDate: DateTime(2100),
+        );
+        if (!mounted) {
+          return;
+        }
+        onSelect(picked);
+      },
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          border: const OutlineInputBorder(),
+          suffixIcon: value == null
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.close, size: 16),
+                  onPressed: () => onSelect(null),
+                ),
+        ),
+        child: Text(
+          value == null ? 'Pilih tanggal' : formatter.format(value),
+          style: TextStyle(
+            color: value == null ? const Color(0xFF9CA3AF) : Colors.black87,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _resetFields() {
+    setState(() {
+      _monthController.clear();
+      _selectedBuildingId = null;
+      _selectedRoomId = null;
+      _selectedTenantId = null;
+      _yearController.clear();
+      _dateFrom = null;
+      _dateTo = null;
+      _status = null;
+    });
+  }
+
+  void _submit() {
+    final month = _parseIntField(_monthController.text, 'Bulan');
+    final year = _parseIntField(_yearController.text, 'Tahun');
+
+    if (month == null || year == null) {
+      return;
+    }
+
+    if (month != -1 && (month < 1 || month > 12)) {
+      _showValidationError('Bulan harus di antara 1 sampai 12.');
+      return;
+    }
+    if (year != -1 && (year < 2000 || year > 2100)) {
+      _showValidationError('Tahun harus di antara 2000 sampai 2100.');
+      return;
+    }
+    if (_dateFrom != null && _dateTo != null && _dateFrom!.isAfter(_dateTo!)) {
+      _showValidationError(
+        'Tanggal mulai tidak boleh lebih besar dari tanggal akhir.',
+      );
+      return;
+    }
+
+    final query = PaymentExportQuery(
+      buildingId: _selectedBuildingId,
+      month: month == -1 ? null : month,
+      roomId: _selectedRoomId,
+      tenantId: _selectedTenantId,
+      year: year == -1 ? null : year,
+      status: _status,
+      dateFrom: _dateFrom?.toIso8601String(),
+      dateTo: _dateTo == null
+          ? null
+          : DateTime(
+              _dateTo!.year,
+              _dateTo!.month,
+              _dateTo!.day,
+              23,
+              59,
+              59,
+            ).toIso8601String(),
+    );
+
+    Navigator.of(context).pop(query);
+  }
+
+  int? _parseIntField(String raw, String fieldLabel) {
+    final value = raw.trim();
+    if (value.isEmpty) {
+      return -1;
+    }
+
+    final parsed = int.tryParse(value);
+    if (parsed == null) {
+      _showValidationError('$fieldLabel harus berupa angka.');
+      return null;
+    }
+    return parsed;
+  }
+
+  void _showValidationError(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  String _toInputValue(int? value) {
+    if (value == null) {
+      return '';
+    }
+    return value.toString();
+  }
+
+  DateTime? _parseDate(String? raw) {
+    if (raw == null || raw.trim().isEmpty) {
+      return null;
+    }
+    return DateTime.tryParse(raw);
+  }
+
+  int? _resolveSelectedValue(
+    int? value,
+    List<PaymentExportFilterOption> items,
+  ) {
+    if (value == null) {
+      return null;
+    }
+    final hasMatch = items.any((item) => item.id == value);
+    return hasMatch ? value : null;
   }
 }
 

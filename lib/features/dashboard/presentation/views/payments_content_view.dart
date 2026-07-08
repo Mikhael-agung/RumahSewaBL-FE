@@ -43,10 +43,22 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
     _paymentsBloc.add(PaymentFilterChanged(filter));
   }
 
-  void _onExportData() {
-    _paymentsBloc.add(
-      PaymentExportRequested(status: _paymentsBloc.state.selectedFilter),
+  Future<void> _onExportData() async {
+    final initialQuery = PaymentExportQuery(
+      status: _paymentsBloc.state.selectedFilter.toExportStatus,
     );
+    final query = await showDialog<PaymentExportQuery>(
+      context: context,
+      builder: (_) => PaymentExportFilterDialog(
+        initialQuery: initialQuery,
+        repository: _paymentsBloc.repository,
+      ),
+    );
+    if (!mounted || query == null) {
+      return;
+    }
+
+    _paymentsBloc.add(PaymentExportRequested(query: query));
   }
 
   void _showProofFile(BuildContext context, PaymentVerificationItem entry) {
@@ -219,7 +231,9 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
         children: [
           PaymentsHeaderSection(
             isMobile: isMobile,
-            onExportPressed: _onExportData,
+            onExportPressed: () {
+              _onExportData();
+            },
             isExporting: context.select(
               (PaymentsBloc bloc) => bloc.state.isExporting,
             ),

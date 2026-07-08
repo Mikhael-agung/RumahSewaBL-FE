@@ -3,6 +3,7 @@ import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/controll
 
 class PaymentsBloc extends Bloc<PaymentsEvent, PaymentsState> {
   final PaymentsRepository _repository;
+  PaymentsRepository get repository => _repository;
 
   PaymentsBloc({required PaymentsRepository repository})
     : _repository = repository,
@@ -142,14 +143,19 @@ class PaymentsBloc extends Bloc<PaymentsEvent, PaymentsState> {
     );
 
     try {
-      await _repository.exportPaymentsDummy(
-        status: event.status ?? state.selectedFilter,
+      final result = await _repository.exportPayments(
+        query:
+            event.query ??
+            PaymentExportQuery(
+              status: (event.status ?? state.selectedFilter).toExportStatus,
+            ),
       );
       emit(
         state.copyWith(
           isExporting: false,
           actionErrorMessage: '',
-          actionSuccessMessage: 'Data pembayaran berhasil diekspor.',
+          actionSuccessMessage:
+              'Data pembayaran berhasil diekspor (${result.filename}).',
         ),
       );
     } catch (error) {
@@ -255,6 +261,7 @@ class PaymentStatusUpdateRequested extends PaymentsEvent {
 
 class PaymentExportRequested extends PaymentsEvent {
   final PaymentFilterStatus? status;
+  final PaymentExportQuery? query;
 
-  const PaymentExportRequested({this.status});
+  const PaymentExportRequested({this.status, this.query});
 }

@@ -1,4 +1,7 @@
 import 'package:rumah_sewa_biru_laut_fe/core/services/api_service.dart';
+import 'package:rumah_sewa_biru_laut_fe/utils/helpers/export_file_saver_stub.dart'
+    if (dart.library.html) 'package:rumah_sewa_biru_laut_fe/utils/helpers/export_file_saver_web.dart'
+    as export_file_saver;
 
 class PaymentsRepository {
   final ApiService _apiService;
@@ -107,24 +110,167 @@ class PaymentsRepository {
     await _apiService.post('/api/payments/$paymentId/status', data: body);
   }
 
-  Future<void> exportPaymentsDummy({
-    PaymentFilterStatus status = PaymentFilterStatus.all,
+  Future<PaymentExportResult> exportPayments({
+    PaymentExportQuery query = const PaymentExportQuery(),
   }) async {
     final response = await _apiService.get(
-      '/api/payments/payment-verify/export-dummy',
-      queryParameters: {'status': status.queryParam ?? 'all', 'dummy': 'true'},
+      '/api/reports/payments/export',
+      queryParameters: query.toQueryParameters(),
     );
 
-    final data = response.data;
-    if (data is Map<String, dynamic>) {
-      final isSuccess = data['success'];
-      if (isSuccess is bool && !isSuccess) {
-        final message = _asString(data['message']);
-        throw Exception(
-          message.isEmpty ? 'Gagal mengekspor data pembayaran.' : message,
-        );
+    if (response.data is! Map<String, dynamic>) {
+      throw Exception('Format respons export pembayaran tidak valid.');
+    }
+
+    final payload = response.data as Map<String, dynamic>;
+    final isSuccess = payload['success'];
+    if (isSuccess is bool && !isSuccess) {
+      final message = _asString(payload['message']);
+      throw Exception(
+        message.isEmpty ? 'Gagal mengekspor data pembayaran.' : message,
+      );
+    }
+
+    final data = payload['data'];
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Data export pembayaran tidak ditemukan.');
+    }
+
+    final filename = _asString(data['filename']);
+    final fileUrl = _asString(data['url']);
+
+    if (fileUrl.isEmpty) {
+      throw Exception('URL file export pembayaran tidak tersedia.');
+    }
+
+    final fallbackName = filename.isEmpty
+        ? 'Laporan-Pembayaran-${DateTime.now().millisecondsSinceEpoch}.xlsx'
+        : filename;
+    final savedPath = await export_file_saver.saveExportFile(
+      url: fileUrl,
+      fileName: fallbackName,
+    );
+    if (savedPath == null) {
+      throw Exception('Penyimpanan file dibatalkan.');
+    }
+
+    return PaymentExportResult(
+      filename: fallbackName,
+      sourceUrl: fileUrl,
+      savedPath: savedPath,
+    );
+  }
+
+  Future<PaymentExportFilterOptions> fetchExportFilterOptions() async {
+    final results = await Future.wait<dynamic>([
+      _safeGet('/api/buildings'),
+      _safeGet('/api/rooms'),
+      _safeGet('/api/tenants'),
+    ]);
+
+    final buildingRawList = _extractList(results[0]);
+    final roomRawList = _extractList(results[1]);
+    final tenantRawList = _extractList(results[2]);
+
+    return PaymentExportFilterOptions(
+      buildings: _parseBuildingOptions(buildingRawList),
+      rooms: _parseRoomOptions(roomRawList),
+      tenants: _parseTenantOptions(tenantRawList),
+    );
+  }
+
+  Future<dynamic> _safeGet(String path) async {
+    try {
+      final response = await _apiService.get(path);
+      return response.data;
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  List<dynamic> _extractList(dynamic raw) {
+    if (raw is List) {
+      return raw;
+    }
+    if (raw is Map<String, dynamic>) {
+      final data = raw['data'];
+      if (data is List) {
+        return data;
       }
     }
+    return const [];
+  }
+
+  List<PaymentExportFilterOption> _parseBuildingOptions(List<dynamic> rawList) {
+    return rawList
+        .whereType<Map>()
+        .map((item) => item.cast<String, dynamic>())
+        .map((map) {
+          final id = _parseInt(map['id']);
+          final name = _asString(map['building_name']);
+          final code = _asString(map['building_code']);
+          final fallbackLabel = id > 0 ? 'Building #$id' : '';
+          final label = [
+            code,
+            name,
+          ].where((value) => value.isNotEmpty).join(' • ');
+          final finalLabel = label.isEmpty ? fallbackLabel : label;
+          if (id <= 0 || finalLabel.isEmpty) {
+            return null;
+          }
+          return PaymentExportFilterOption(id: id, label: finalLabel);
+        })
+        .whereType<PaymentExportFilterOption>()
+        .toList(growable: false);
+  }
+
+  List<PaymentExportFilterOption> _parseRoomOptions(List<dynamic> rawList) {
+    return rawList
+        .whereType<Map>()
+        .map((item) => item.cast<String, dynamic>())
+        .map((map) {
+          final id = _parseInt(map['id']);
+          final roomCode = _asString(map['room_code']);
+          final buildingRaw = map['building'];
+          final buildingName = buildingRaw is Map
+              ? _asString(buildingRaw['building_name'])
+              : '';
+          final fallbackLabel = id > 0 ? 'Room #$id' : '';
+          final label = [
+            buildingName,
+            roomCode,
+          ].where((value) => value.isNotEmpty).join(' • ');
+          final finalLabel = label.isEmpty ? fallbackLabel : label;
+          if (id <= 0 || finalLabel.isEmpty) {
+            return null;
+          }
+          return PaymentExportFilterOption(id: id, label: finalLabel);
+        })
+        .whereType<PaymentExportFilterOption>()
+        .toList(growable: false);
+  }
+
+  List<PaymentExportFilterOption> _parseTenantOptions(List<dynamic> rawList) {
+    return rawList
+        .whereType<Map>()
+        .map((item) => item.cast<String, dynamic>())
+        .map((map) {
+          final id = _parseInt(map['id']);
+          final fullName = _asString(map['full_name']);
+          final tenantCode = _asString(map['tenant_code']);
+          final fallbackLabel = id > 0 ? 'Tenant #$id' : '';
+          final label = [
+            fullName,
+            tenantCode,
+          ].where((value) => value.isNotEmpty).join(' • ');
+          final finalLabel = label.isEmpty ? fallbackLabel : label;
+          if (id <= 0 || finalLabel.isEmpty) {
+            return null;
+          }
+          return PaymentExportFilterOption(id: id, label: finalLabel);
+        })
+        .whereType<PaymentExportFilterOption>()
+        .toList(growable: false);
   }
 
   String _asString(dynamic value) {
@@ -273,6 +419,125 @@ enum PaymentFilterStatus {
         return 'ditolak';
     }
   }
+}
+
+enum PaymentExportStatus {
+  all,
+  pendingVerification,
+  verified,
+  rejected;
+
+  String get queryValue {
+    switch (this) {
+      case PaymentExportStatus.all:
+        return 'all';
+      case PaymentExportStatus.pendingVerification:
+        return 'menunggu_verifikasi';
+      case PaymentExportStatus.verified:
+        return 'terverifikasi';
+      case PaymentExportStatus.rejected:
+        return 'ditolak';
+    }
+  }
+}
+
+extension PaymentFilterStatusExport on PaymentFilterStatus {
+  PaymentExportStatus get toExportStatus {
+    switch (this) {
+      case PaymentFilterStatus.all:
+        return PaymentExportStatus.all;
+      case PaymentFilterStatus.pendingVerification:
+        return PaymentExportStatus.pendingVerification;
+      case PaymentFilterStatus.verified:
+        return PaymentExportStatus.verified;
+      case PaymentFilterStatus.rejected:
+        return PaymentExportStatus.rejected;
+    }
+  }
+}
+
+class PaymentExportQuery {
+  final int? buildingId;
+  final String? dateFrom;
+  final String? dateTo;
+  final int? month;
+  final int? roomId;
+  final PaymentExportStatus? status;
+  final int? tenantId;
+  final int? year;
+
+  const PaymentExportQuery({
+    this.buildingId,
+    this.dateFrom,
+    this.dateTo,
+    this.month,
+    this.roomId,
+    this.status,
+    this.tenantId,
+    this.year,
+  });
+
+  Map<String, dynamic>? toQueryParameters() {
+    final params = <String, dynamic>{};
+
+    if (buildingId != null) {
+      params['building_id'] = buildingId;
+    }
+    if (dateFrom != null && dateFrom!.trim().isNotEmpty) {
+      params['date_from'] = dateFrom;
+    }
+    if (dateTo != null && dateTo!.trim().isNotEmpty) {
+      params['date_to'] = dateTo;
+    }
+    if (month != null) {
+      params['month'] = month;
+    }
+    if (roomId != null) {
+      params['room_id'] = roomId;
+    }
+    if (status != null) {
+      params['status'] = status!.queryValue;
+    }
+    if (tenantId != null) {
+      params['tenant_id'] = tenantId;
+    }
+    if (year != null) {
+      params['year'] = year;
+    }
+
+    return params.isEmpty ? null : params;
+  }
+}
+
+class PaymentExportFilterOption {
+  final int id;
+  final String label;
+
+  const PaymentExportFilterOption({required this.id, required this.label});
+}
+
+class PaymentExportFilterOptions {
+  final List<PaymentExportFilterOption> buildings;
+  final List<PaymentExportFilterOption> rooms;
+  final List<PaymentExportFilterOption> tenants;
+
+  const PaymentExportFilterOptions({
+    this.buildings = const <PaymentExportFilterOption>[],
+    this.rooms = const <PaymentExportFilterOption>[],
+    this.tenants = const <PaymentExportFilterOption>[],
+  });
+}
+
+class PaymentExportResult {
+  final String filename;
+  final String sourceUrl;
+  final String savedPath;
+
+  const PaymentExportResult({
+    required this.filename,
+    required this.sourceUrl,
+    required this.savedPath,
+  });
 }
 
 extension PaymentVerificationStatusApi on PaymentVerificationStatus {
