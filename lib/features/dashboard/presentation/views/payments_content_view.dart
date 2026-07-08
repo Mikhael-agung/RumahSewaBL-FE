@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/controllers/payments_bloc.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/controllers/payments_controller.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/views/widgets/payments_ui_components.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:rumah_sewa_biru_laut_fe/utils/helpers/web_network_image_embed_stub.dart'
     if (dart.library.html) 'package:rumah_sewa_biru_laut_fe/utils/helpers/web_network_image_embed_web.dart'
     as web_network_image_embed;
@@ -219,10 +220,7 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
     PaymentsState state,
   ) {
     if (state.isLoading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 28),
-        child: Center(child: CircularProgressIndicator()),
-      );
+      return isMobile ? _buildMobileShimmer() : _buildDesktopShimmer();
     }
 
     if (state.errorMessage.isNotEmpty) {
@@ -289,5 +287,152 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
             onVerifyPayment: (entry) => _onVerifyPayment(context, entry),
             verifyingPaymentIds: state.verifyingPaymentIds,
           );
+  }
+
+  Widget _buildDesktopShimmer() {
+    return Shimmer.fromColors(
+      baseColor: const Color(0xFFF1F5F9),
+      highlightColor: const Color(0xFFE2E8F0),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+            ),
+            child: const Row(
+              children: [
+                PaymentTableHeaderCell(text: 'NO', flex: 1),
+                PaymentTableHeaderCell(text: 'PENYEWA', flex: 2),
+                PaymentTableHeaderCell(text: 'UNIT/KAMAR', flex: 3),
+                PaymentTableHeaderCell(text: 'BULAN', flex: 3),
+                PaymentTableHeaderCell(text: 'JUMLAH', flex: 3),
+                PaymentTableHeaderCell(text: 'TANGGAL', flex: 2),
+                PaymentTableHeaderCell(text: 'STATUS', flex: 4),
+                PaymentTableHeaderCell(
+                  text: 'AKSI',
+                  flex: 4,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          ...List.generate(4, (_) => _buildDesktopShimmerRow()),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: Color(0xFFEFF3F8))),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(18)),
+            ),
+            child: Row(
+              children: [
+                _buildShimmerBox(width: 130, height: 13),
+                const Spacer(),
+                _buildShimmerBox(width: 68, height: 30, radius: 8),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDesktopShimmerRow() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: Color(0xFFEFF3F8))),
+      ),
+      child: Row(
+        children: [
+          Expanded(flex: 1, child: _buildShimmerBox(height: 12)),
+          Expanded(flex: 2, child: _buildShimmerBox(height: 14)),
+          Expanded(flex: 3, child: _buildShimmerBox(height: 14)),
+          Expanded(flex: 3, child: _buildShimmerBox(height: 14)),
+          Expanded(flex: 3, child: _buildShimmerBox(height: 14)),
+          Expanded(flex: 2, child: _buildShimmerBox(height: 14)),
+          Expanded(flex: 4, child: _buildShimmerBox(height: 28, radius: 999)),
+          Expanded(
+            flex: 4,
+            child: Align(
+              alignment: Alignment.center,
+              child: _buildShimmerBox(width: 96, height: 30, radius: 8),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileShimmer() {
+    return Shimmer.fromColors(
+      baseColor: const Color(0xFFF1F5F9),
+      highlightColor: const Color(0xFFE2E8F0),
+      child: Column(
+        children: [
+          ...List.generate(
+            3,
+            (_) => Container(
+              padding: const EdgeInsets.all(14),
+              decoration: const BoxDecoration(
+                border: Border(bottom: BorderSide(color: Color(0xFFEFF3F8))),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const CircleAvatar(
+                        radius: 16,
+                        backgroundColor: Colors.white,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(child: _buildShimmerBox(height: 14)),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  _buildShimmerBox(width: 128, height: 24, radius: 999),
+                  const SizedBox(height: 10),
+                  _buildShimmerBox(width: 170, height: 12),
+                  const SizedBox(height: 8),
+                  _buildShimmerBox(width: 150, height: 13),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: _buildShimmerBox(width: 96, height: 30, radius: 8),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                _buildShimmerBox(width: 128, height: 13),
+                const Spacer(),
+                _buildShimmerBox(width: 68, height: 28, radius: 8),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShimmerBox({
+    double? width,
+    required double height,
+    double radius = 4,
+  }) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(radius),
+      ),
+    );
   }
 }
