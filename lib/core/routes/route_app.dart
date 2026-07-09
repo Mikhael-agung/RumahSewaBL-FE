@@ -4,15 +4,21 @@ import 'package:rumah_sewa_biru_laut_fe/core/routes/route_name.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/auth/bindings/auth_binding.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/auth/presentation/controllers/login_controller.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/auth/presentation/pages/login_screen.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/auth/presentation/widgets/login_landing_sections.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/pages/manager_dash_page.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/pages/admin_dash_page.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/pages/tenant_dash_page.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/pages/tenant_payments_page.dart';
 
-class RouteApp{
+class RouteApp {
   static final router = GoRouter(
-    initialLocation: RouteName.loginScreen,
+    initialLocation: RouteName.landingPage,
     routes: [
+      GoRoute(
+        path: RouteName.landingPage,
+        name: RouteName.landingPage,
+        builder: (context, state) => const LandingPage(),
+      ),
       GoRoute(
         path: RouteName.loginScreen,
         name: RouteName.loginScreen,

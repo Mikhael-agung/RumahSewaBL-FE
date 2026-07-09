@@ -1,5 +1,6 @@
-class RouteName{
+class RouteName {
   RouteName._();
+  static const String landingPage = '/';
   static const String loginScreen = '/login';
   static const String managerDashPage = '/manager/dashboard';
   static const String managerPropertiesPage = '/manager/properties';

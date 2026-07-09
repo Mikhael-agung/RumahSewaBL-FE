@@ -20,17 +20,13 @@ class LoginScreen extends StatelessWidget {
             return SingleChildScrollView(
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Column(
-                    children: [
-                      // Main Content Area
-                      Expanded(
-                        child: _buildMainContent(isWeb, controller, context),
-                      ),
-                      // Footer
-                      _buildFooter(isWeb),
-                    ],
-                  ),
+                child: Column(
+                  children: [
+                    // Main Content Area
+                    _buildMainContent(isWeb, controller, context),
+                    // Footer
+                    _buildFooter(isWeb),
+                  ],
                 ),
               ),
             );
@@ -351,6 +347,7 @@ class LoginScreen extends StatelessWidget {
               ),
             ),
           ),
+          SizedBox(height: h(24)),
         ],
       ),
     );
