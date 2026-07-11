@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/constants/colors.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/routes/route_name.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/auth/presentation/widgets/map_widget.dart';
 import 'package:rumah_sewa_biru_laut_fe/utils/helpers/currency_format.dart';
 
 class LandingPage extends StatelessWidget {
@@ -156,14 +157,29 @@ class _HeroSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        const Text(
-          'Your Sanctuary\nBy the Sea',
-          style: TextStyle(
-            fontSize: 50,
-            height: 1.05,
-            fontWeight: FontWeight.w800,
-            color: Color(0xFF111827),
-          ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Your Sanctuary',
+              style: TextStyle(
+                fontSize: 50,
+                height: 1.05,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF111827),
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'By the Sea',
+              style: TextStyle(
+                fontSize: 50,
+                height: 1.05,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF005D90),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         const Text(
@@ -176,19 +192,47 @@ class _HeroSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        FilledButton(
-          onPressed: onLoginTap,
-          style: FilledButton.styleFrom(
-            backgroundColor: ConstantColor.primaryColor,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(999),
+        Row(
+          children: [
+            FilledButton(
+              onPressed: onLoginTap,
+              style: FilledButton.styleFrom(
+                backgroundColor: ConstantColor.primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+              ),
+              child: const Text(
+                'Browse Rooms',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              ),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          ),
-          child: const Text(
-            'Login',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-          ),
+
+            // outer button
+            const SizedBox(width: 12),
+            OutlinedButton(
+              onPressed: () {},
+              style: OutlinedButton.styleFrom(
+                foregroundColor: ConstantColor.primaryColor,
+                animationDuration: const Duration(milliseconds: 200),
+                side: const BorderSide(color: ConstantColor.primaryColor),
+                enabledMouseCursor: SystemMouseCursors.click,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+              ),
+              child: const Text(
+                'Contact Agent',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: ConstantColor.primaryColor,
+                ),
+              ), 
+            ),
+          ],
         ),
       ],
     );
@@ -510,18 +554,7 @@ class _StrategicLocationSection extends StatelessWidget {
             ],
           );
 
-          const map = ClipRRect(
-            borderRadius: BorderRadius.all(Radius.circular(14)),
-            child: AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Image(
-                image: NetworkImage(
-                  'https://images.unsplash.com/photo-1569336415962-a4bd9f69c07b?auto=format&fit=crop&w=1400&q=80',
-                ),
-                fit: BoxFit.cover,
-              ),
-            ),
-          );
+          const map = MapWidget();
 
           if (isMobile) {
             return Column(children: [info, const SizedBox(height: 14), map]);

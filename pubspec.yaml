@@ -48,6 +48,8 @@ dependencies:
   cached_network_image: ^3.4.1
   syncfusion_flutter_pdfviewer: ^31.1.0
   flutter_bloc: ^8.1.6
+  google_maps_flutter_web: ^0.6.2+3
+  google_maps_flutter: ^2.17.1
 
 dev_dependencies:
   flutter_test:
