@@ -10,6 +10,7 @@ import 'package:rumah_sewa_biru_laut_fe/core/services/global_notification_servic
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/controllers/payments_bloc.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/controllers/payments_controller.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/views/widgets/payments_ui_components.dart';
+import 'package:rumah_sewa_biru_laut_fe/utils/helpers/currency_format.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:rumah_sewa_biru_laut_fe/utils/helpers/web_network_image_embed_stub.dart'
@@ -418,11 +419,13 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
               entry,
               PaymentVerificationStatus.rejected,
             ),
+            onViewDetailPayment: (entry) => _showVerifiedPaymentDetail(entry),
             verifyingPaymentIds: state.verifyingPaymentIds,
           )
         : PaymentDesktopTable(
             entries: entries,
             onReload: _reloadPayments,
+            onViewDetailPayment: (entry) => _showVerifiedPaymentDetail(entry),
             onShowProofFile: (entry) => _showProofFile(context, entry),
             onVerifyPayment: (entry) => _onUpdatePaymentStatus(
               context,
@@ -436,6 +439,20 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
             ),
             verifyingPaymentIds: state.verifyingPaymentIds,
           );
+  }
+
+  void _showVerifiedPaymentDetail(PaymentVerificationItem entry) {
+    if (entry.status != PaymentVerificationStatus.verified) {
+      return;
+    }
+
+    showDialog<void>(
+      context: context,
+      builder: (_) => _VerifiedPaymentDetailDialog(
+        entry: entry,
+        onViewProof: () => _showProofFile(context, entry),
+      ),
+    );
   }
 
   Widget _buildDesktopShimmer() {
@@ -593,6 +610,239 @@ class _PaymentStatusDialog extends StatefulWidget {
 
   @override
   State<_PaymentStatusDialog> createState() => _PaymentStatusDialogState();
+}
+
+class _VerifiedPaymentDetailDialog extends StatelessWidget {
+  final PaymentVerificationItem entry;
+  final VoidCallback onViewProof;
+
+  const _VerifiedPaymentDetailDialog({
+    required this.entry,
+    required this.onViewProof,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= 800;
+    final amountDigits = int.tryParse(
+      entry.amount.replaceAll(RegExp(r'[^0-9]'), ''),
+    );
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: isDesktop ? 560 : 360),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Detail Pembayaran',
+                      style: TextStyle(
+                        fontSize: 28,
+                        color: Color(0xFF111827),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, size: 18),
+                    style: IconButton.styleFrom(
+                      backgroundColor: const Color(0xFFF3F4F6),
+                      foregroundColor: const Color(0xFF6B7280),
+                      minimumSize: const Size(28, 28),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                'ID Transaksi: ${entry.paymentId.isEmpty ? '-' : entry.paymentId}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF6B7280),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Divider(height: 1, color: Color(0xFFE5E7EB)),
+              const SizedBox(height: 16),
+              Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD1FAE5),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.check_circle_outline,
+                        size: 15,
+                        color: Color(0xFF065F46),
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        'TERVERIFIKASI',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF065F46),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              _detailGridItem('PENYEWA', entry.tenantName),
+              const SizedBox(height: 10),
+              _detailGridItem('UNIT/KAMAR', entry.unit),
+              const SizedBox(height: 10),
+              _detailGridItem('BULAN SEWA', entry.month),
+              const SizedBox(height: 10),
+              _detailGridItem(
+                'JUMLAH PEMBAYARAN',
+                amountDigits == null
+                    ? entry.amount
+                    : currencyIdr.format(amountDigits),
+                valueColor: const Color(0xFF005D90),
+                valueWeight: FontWeight.w700,
+              ),
+              const SizedBox(height: 10),
+              _detailGridItem('TANGGAL TRANSFER', entry.date),
+              const SizedBox(height: 14),
+              const Divider(height: 1, color: Color(0xFFE5E7EB)),
+              const SizedBox(height: 12),
+              const Row(
+                children: [
+                  Icon(Icons.verified, size: 16, color: Color(0xFF047857)),
+                  SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Diverifikasi oleh: Manager Aktif',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF374151),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'BUKTI PEMBAYARAN',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: onViewProof,
+                    icon: const Icon(Icons.download_rounded, size: 14),
+                    label: const Text('Unduh'),
+                  ),
+                ],
+              ),
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(top: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: OutlinedButton.icon(
+                  onPressed: onViewProof,
+                  icon: const Icon(Icons.receipt_long_rounded, size: 16),
+                  label: const Text('Lihat Bukti Pembayaran'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: const Text(
+                  '"Pembayaran telah diverifikasi. Terima kasih."',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF374151),
+                    fontStyle: FontStyle.italic,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Align(
+                alignment: Alignment.centerRight,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Tutup'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _detailGridItem(
+    String label,
+    String value, {
+    Color valueColor = const Color(0xFF111827),
+    FontWeight valueWeight = FontWeight.w600,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: Color(0xFF64748B),
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.4,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 15,
+            color: valueColor,
+            fontWeight: valueWeight,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _PaymentStatusDialogState extends State<_PaymentStatusDialog> {

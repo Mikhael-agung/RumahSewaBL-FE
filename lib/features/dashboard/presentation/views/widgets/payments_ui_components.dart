@@ -850,6 +850,7 @@ class _PaymentExportFilterDialogState extends State<PaymentExportFilterDialog> {
 class PaymentDesktopTable extends StatelessWidget {
   final List<PaymentVerificationItem> entries;
   final VoidCallback onReload;
+  final ValueChanged<PaymentVerificationItem> onViewDetailPayment;
   final ValueChanged<PaymentVerificationItem> onShowProofFile;
   final ValueChanged<PaymentVerificationItem> onVerifyPayment;
   final ValueChanged<PaymentVerificationItem> onRejectPayment;
@@ -859,6 +860,7 @@ class PaymentDesktopTable extends StatelessWidget {
     super.key,
     required this.entries,
     required this.onReload,
+    required this.onViewDetailPayment,
     required this.onShowProofFile,
     required this.onVerifyPayment,
     required this.onRejectPayment,
@@ -949,6 +951,7 @@ class PaymentDesktopTable extends StatelessWidget {
                 onViewImage: () => onShowProofFile(entry),
                 onVerify: () => onVerifyPayment(entry),
                 onReject: () => onRejectPayment(entry),
+                viewDetailPayment: () => onViewDetailPayment(entry),
                 isVerifying: verifyingPaymentIds.contains(entry.paymentId),
               ),
             ),
@@ -990,6 +993,7 @@ class PaymentDesktopTable extends StatelessWidget {
 class PaymentMobileList extends StatelessWidget {
   final List<PaymentVerificationItem> entries;
   final VoidCallback onReload;
+  final ValueChanged<PaymentVerificationItem> onViewDetailPayment;
   final ValueChanged<PaymentVerificationItem> onVerifyPayment;
   final ValueChanged<PaymentVerificationItem> onRejectPayment;
   final Set<String> verifyingPaymentIds;
@@ -998,6 +1002,7 @@ class PaymentMobileList extends StatelessWidget {
     super.key,
     required this.entries,
     required this.onReload,
+    required this.onViewDetailPayment,
     required this.onVerifyPayment,
     required this.onRejectPayment,
     required this.verifyingPaymentIds,
@@ -1072,6 +1077,7 @@ class PaymentMobileList extends StatelessWidget {
                     status: entry.status,
                     onVerify: () => onVerifyPayment(entry),
                     onReject: () => onRejectPayment(entry),
+                    viewDetailPayment: () => onViewDetailPayment(entry),
                     isVerifying: verifyingPaymentIds.contains(entry.paymentId),
                   ),
                 ),
@@ -1126,6 +1132,7 @@ class PaymentActionWidget extends StatelessWidget {
   final VoidCallback? onViewImage;
   final VoidCallback? onVerify;
   final VoidCallback? onReject;
+  final VoidCallback? viewDetailPayment;
   final bool isVerifying;
 
   const PaymentActionWidget({
@@ -1134,6 +1141,7 @@ class PaymentActionWidget extends StatelessWidget {
     this.onViewImage,
     this.onVerify,
     this.onReject,
+    this.viewDetailPayment,
     this.isVerifying = false,
   });
 
@@ -1171,12 +1179,15 @@ class PaymentActionWidget extends StatelessWidget {
     }
 
     if (status == PaymentVerificationStatus.verified) {
-      return const Text(
-        'Detail',
-        style: TextStyle(
-          fontSize: 13,
-          color: Color(0xFF374151),
-          fontWeight: FontWeight.w600,
+      return GestureDetector(
+        onTap: viewDetailPayment,
+        child: const Text(
+          'Detail',
+          style: TextStyle(
+            fontSize: 13,
+            color: Color(0xFF374151),
+            fontWeight: FontWeight.w600,
+          ),
         ),
       );
     }
