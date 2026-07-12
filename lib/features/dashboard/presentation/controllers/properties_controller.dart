@@ -82,7 +82,6 @@ class PropertiesController extends GetxController {
         final result = await getBuildingsUseCase!.execute();
         buildings.assignAll(result);
       }
-    } catch (e) {
     } finally {
       isBuildingsLoading.value = false;
     }

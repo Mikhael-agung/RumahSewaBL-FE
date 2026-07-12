@@ -341,9 +341,9 @@ class _DashboardHeader extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
-                  color: TenantColors.primaryContainer.withOpacity(0.30),
+                  color: TenantColors.primaryContainer.withValues(alpha: 0.30),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: TenantColors.primary.withOpacity(0.10)),
+                  border: Border.all(color: TenantColors.primary.withValues(alpha: 0.10)),
                 ),
                 child: Row(
                   children: [
@@ -390,9 +390,9 @@ class _DashboardHeader extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               decoration: BoxDecoration(
-                color: TenantColors.primaryContainer.withOpacity(0.30),
+                color: TenantColors.primaryContainer.withValues(alpha: 0.30),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: TenantColors.primary.withOpacity(0.10)),
+                border: Border.all(color: TenantColors.primary.withValues(alpha: 0.10)),
               ),
               child: const Row(
                 mainAxisSize: MainAxisSize.min,
@@ -428,10 +428,10 @@ class _RoomCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -446,7 +446,7 @@ class _RoomCard extends StatelessWidget {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: TenantColors.primary.withOpacity(0.06),
+                color: TenantColors.primary.withValues(alpha: 0.06),
                 shape: BoxShape.circle,
               ),
             ),
@@ -628,7 +628,7 @@ class _RoomCard extends StatelessWidget {
 class _SupportCard extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const _SupportCard({super.key, required this.onPressed});
+  const _SupportCard({required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -638,10 +638,10 @@ class _SupportCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -656,7 +656,7 @@ class _SupportCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: TenantColors.primary.withOpacity(0.1),
+                  color: TenantColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(Icons.support_agent, color: TenantColors.primary),
@@ -722,8 +722,7 @@ class _InfoStat extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label.toUpperCase(),
-            style: const TextStyle(
+          label.toUpperCase(),            style: const TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.1,

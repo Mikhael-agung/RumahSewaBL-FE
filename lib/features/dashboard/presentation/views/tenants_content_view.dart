@@ -1423,7 +1423,7 @@ class _TenantsContentViewState extends State<TenantsContentView> {
               ),
             ],
           );
-        }).toList(),
+        }),
       ],
     );
   }

@@ -458,7 +458,7 @@ class PropertiesContentView extends StatelessWidget {
             building,
             roomsCountStr,
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -557,7 +557,7 @@ class PropertiesContentView extends StatelessWidget {
                           value: building.id,
                           child: Text(building.buildingName),
                         );
-                      }).toList(),
+                      }),
                     ];
                   },
                   child: Container(
@@ -820,7 +820,7 @@ class PropertiesContentView extends StatelessWidget {
             room,
             buildingName,
           );
-        }).toList(),
+        }),
       ],
     );
   }
@@ -1301,7 +1301,7 @@ class _AddRoomDialogState extends State<_AddRoomDialog> {
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButtonFormField<Building>(
-                    value: _selectedBuilding,
+                    initialValue: _selectedBuilding,
                     isExpanded: true,
                     decoration: const InputDecoration(border: InputBorder.none),
                     icon: const Icon(Icons.keyboard_arrow_down, color: ConstantColor.textSecondaryColor),
@@ -1633,7 +1633,7 @@ class _EditRoomDialogState extends State<_EditRoomDialog> {
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButtonFormField<Building>(
-                    value: _selectedBuilding,
+                    initialValue: _selectedBuilding,
                     isExpanded: true,
                     decoration: const InputDecoration(border: InputBorder.none),
                     icon: const Icon(Icons.keyboard_arrow_down, color: ConstantColor.textSecondaryColor),

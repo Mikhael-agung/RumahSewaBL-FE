@@ -28,7 +28,7 @@ class TenantSidebar extends StatelessWidget {
       decoration: BoxDecoration(
         color: TenantColors.background,
         border: Border(
-          right: BorderSide(color: Colors.grey.shade300.withOpacity(0.6)),
+          right: BorderSide(color: Colors.grey.shade300.withValues(alpha: 0.6)),
         ),
       ),
       child: Column(
@@ -123,7 +123,7 @@ class _SidebarItem extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
         color: active
-            ? const Color(0xFF005D90).withOpacity(0.10)
+            ? const Color(0xFF005D90).withValues(alpha: 0.10)
             : Colors.transparent,
         borderRadius: BorderRadius.circular(16),
       ),
@@ -165,7 +165,7 @@ class TenantTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double _fontScale(_) => fontScale;
+    double fontScale(_) => fontScale;
     final isNarrow = MediaQuery.of(context).size.width < 900;
 
     return Container(
@@ -174,11 +174,11 @@ class TenantTopBar extends StatelessWidget {
       decoration: BoxDecoration(
         color: TenantColors.background,
         border: Border(
-          bottom: BorderSide(color: Colors.grey.shade300.withOpacity(0.5)),
+          bottom: BorderSide(color: Colors.grey.shade300.withValues(alpha: 0.5)),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -199,7 +199,7 @@ class TenantTopBar extends StatelessWidget {
                     'Biru Laut',
                     style: TextStyle(
                       fontFamily: 'Manrope',
-                      fontSize: 16 * _fontScale(context),
+                      fontSize: 16 * fontScale(context),
                       fontWeight: FontWeight.w800,
                       color: TenantColors.primary,
                     ),

@@ -69,7 +69,7 @@ class SettingsContentView extends StatelessWidget {
           Switch(
             value: isEnabled,
             onChanged: (val) {},
-            activeColor: const Color(0xFF0077B6),
+            activeThumbColor: const Color(0xFF0077B6),
           ),
         ],
       ),

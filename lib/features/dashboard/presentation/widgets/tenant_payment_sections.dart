@@ -14,10 +14,10 @@ BoxDecoration _surfaceDecoration({required double radius}) {
   return BoxDecoration(
     color: _surfaceBackground,
     borderRadius: BorderRadius.circular(radius),
-    border: Border.all(color: Colors.black.withOpacity(0.05)),
+    border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.04),
+        color: Colors.black.withValues(alpha: 0.04),
         blurRadius: 18,
         offset: const Offset(0, 8),
       ),
@@ -386,7 +386,7 @@ class TenantBillingCard extends StatelessWidget {
                     backgroundColor: TenantColors.primary,
                     foregroundColor: Colors.white,
                     elevation: 10,
-                    shadowColor: TenantColors.primary.withOpacity(0.35),
+                    shadowColor: TenantColors.primary.withValues(alpha: 0.35),
                     padding: const EdgeInsets.symmetric(horizontal: 18),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     textStyle: const TextStyle(fontWeight: FontWeight.w900),
@@ -562,7 +562,7 @@ class _TenantPaymentsHistoryTableCardState extends State<TenantPaymentsHistoryTa
                     decoration: BoxDecoration(
                       color: const Color(0xFFF6F7FB),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.black.withOpacity(0.04)),
+                      border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
                     ),
                     child: Row(
                       children: const [
@@ -747,7 +747,7 @@ class _TenantHistoryCardState extends State<TenantHistoryCard> {
                       onPressed: () => context.go(RouteName.tenantPaymentsPage),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: TenantColors.primary,
-                        side: BorderSide(color: TenantColors.primary.withOpacity(0.20)),
+                        side: BorderSide(color: TenantColors.primary.withValues(alpha: 0.20)),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
                         textStyle: const TextStyle(fontWeight: FontWeight.w800),
@@ -843,9 +843,9 @@ class HistoryItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: TenantColors.background.withOpacity(0.30),
+        color: TenantColors.background.withValues(alpha: 0.30),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withOpacity(0.04)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
       ),
       child: Row(
         children: [
@@ -853,7 +853,7 @@ class HistoryItem extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: TenantColors.primary.withOpacity(0.1),
+              color: TenantColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.check_circle, color: TenantColors.primary, size: 22),
@@ -1027,7 +1027,7 @@ class _UploadDropZone extends StatelessWidget {
               width: 64,
               height: 64,
               decoration: BoxDecoration(
-                color: TenantColors.primary.withOpacity(0.08),
+                color: TenantColors.primary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.cloud_upload_rounded, size: 34, color: TenantColors.primary),
@@ -1103,11 +1103,11 @@ class _PaymentField extends StatelessWidget {
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.black.withOpacity(0.08)),
+              borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.08)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.black.withOpacity(0.08)),
+              borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.08)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
@@ -1188,11 +1188,11 @@ class _PaymentDropdownField extends StatelessWidget {
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.black.withOpacity(0.08)),
+              borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.08)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.black.withOpacity(0.08)),
+              borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.08)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
@@ -1267,7 +1267,7 @@ class _HistoryTableRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
       ),
       child: Row(
         children: [
@@ -1368,7 +1368,7 @@ class _PageButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: enabled ? Colors.white : const Color(0xFFF2F4F8),
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: Colors.black.withOpacity(0.05)),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
         ),
         child: Icon(icon, size: 18, color: enabled ? TenantColors.primary : TenantColors.onSurfaceVariant),
       ),
@@ -1395,7 +1395,7 @@ class _PageNumberButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: active ? TenantColors.primary : Colors.white,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: active ? TenantColors.primary : Colors.black.withOpacity(0.05)),
+          border: Border.all(color: active ? TenantColors.primary : Colors.black.withValues(alpha: 0.05)),
         ),
         child: Text(
           '$number',

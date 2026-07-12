@@ -619,7 +619,7 @@ class _PaymentExportFilterDialogState extends State<PaymentExportFilterDialog> {
 
     final validValue = _resolveSelectedValue(value, items);
     return DropdownButtonFormField<int?>(
-      value: validValue,
+      initialValue: validValue,
       isExpanded: true,
       icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 24),
       style: const TextStyle(
@@ -641,7 +641,7 @@ class _PaymentExportFilterDialogState extends State<PaymentExportFilterDialog> {
 
   Widget _buildStatusDropdownField() {
     return DropdownButtonFormField<PaymentExportStatus?>(
-      value: _status,
+      initialValue: _status,
       isExpanded: true,
       icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 24),
       style: const TextStyle(
@@ -1222,7 +1222,7 @@ class PaymentActionButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           color: isDisabled
-              ? backgroundColor.withOpacity(0.75)
+              ? backgroundColor.withValues(alpha: 0.75)
               : backgroundColor,
           borderRadius: BorderRadius.circular(8),
           border: borderColor != null ? Border.all(color: borderColor!) : null,
