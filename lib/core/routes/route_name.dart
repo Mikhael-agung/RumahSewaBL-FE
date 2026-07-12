@@ -10,6 +10,7 @@ class RouteName {
   static const String managerSettingsPage = '/manager/settings';
   static const String managerSupportPage = '/manager/support';
   static const String adminDashPage = '/admin/dashboard';
+  static const String adminActivityLogPage = '/admin/activity-log';
   static const String adminPropertiesPage = '/admin/properties';
   static const String adminTenantsPage = '/admin/tenants';
   static const String adminPaymentsPage = '/admin/payments';

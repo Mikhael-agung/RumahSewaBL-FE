@@ -28,6 +28,7 @@ class AdminDashboardLayout extends StatelessWidget {
 
   static const _navItems = <_AdminNavItem>[
     _AdminNavItem(Icons.dashboard_outlined, Icons.dashboard, "Dashboard", RouteName.adminDashPage),
+    _AdminNavItem(Icons.history_outlined, Icons.history, "Activity Log", RouteName.adminActivityLogPage),
     _AdminNavItem(Icons.domain_outlined, Icons.domain, "Properties", RouteName.adminPropertiesPage),
     _AdminNavItem(Icons.groups_outlined, Icons.groups, "Tenants", RouteName.adminTenantsPage),
     _AdminNavItem(Icons.payments_outlined, Icons.payments, "Payments", RouteName.adminPaymentsPage),

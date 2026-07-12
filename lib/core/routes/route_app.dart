@@ -7,6 +7,7 @@ import 'package:rumah_sewa_biru_laut_fe/features/auth/presentation/pages/login_s
 import 'package:rumah_sewa_biru_laut_fe/features/auth/presentation/widgets/login_landing_sections.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/pages/manager_dash_page.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/pages/admin_dash_page.dart';
+import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/pages/admin_activity_log_page.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/pages/tenant_dash_page.dart';
 import 'package:rumah_sewa_biru_laut_fe/features/dashboard/presentation/pages/tenant_payments_page.dart';
 
@@ -85,6 +86,13 @@ class RouteApp {
         ),
       ),
       GoRoute(
+        path: RouteName.adminActivityLogPage,
+        name: RouteName.adminActivityLogPage,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: AdminActivityLogPage(),
+        ),
+      ),
+      GoRoute(
         path: RouteName.adminPropertiesPage,
         name: RouteName.adminPropertiesPage,
         pageBuilder: (context, state) => const NoTransitionPage(
@@ -103,13 +111,6 @@ class RouteApp {
         name: RouteName.adminPaymentsPage,
         pageBuilder: (context, state) => const NoTransitionPage(
           child: AdminDashPage(activeMenu: "Payments"),
-        ),
-      ),
-      GoRoute(
-        path: RouteName.adminMaintenancePage,
-        name: RouteName.adminMaintenancePage,
-        pageBuilder: (context, state) => const NoTransitionPage(
-          child: AdminDashPage(activeMenu: "Maintenance"),
         ),
       ),
       GoRoute(
