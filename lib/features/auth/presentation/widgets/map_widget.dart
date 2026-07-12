@@ -9,7 +9,7 @@ class MapWidget extends StatefulWidget {
 }
 
 class _MapWidgetState extends State<MapWidget> {
-  late GoogleMapController mapController;
+  GoogleMapController? mapController;
 
   // Monas Jakarta coordinates
   final LatLng monasLocation = LatLng(-7.290130, 112.779206);
@@ -48,7 +48,11 @@ class _MapWidgetState extends State<MapWidget> {
 
   @override
   void dispose() {
-    mapController.dispose();
+    try {
+      mapController?.dispose();
+    } catch (e) {
+      debugPrint('Error disposing mapController: $e');
+    }
     super.dispose();
   }
 }
