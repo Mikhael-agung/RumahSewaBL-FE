@@ -415,10 +415,14 @@ class GlobalNotificationService extends GetxService
       '@mipmap/ic_launcher',
     );
     const iosInitialization = DarwinInitializationSettings();
+    const linuxInitialization = LinuxInitializationSettings(
+      defaultActionName: 'Buka Notifikasi',
+    );
     const settings = InitializationSettings(
       android: androidInitialization,
       iOS: iosInitialization,
       macOS: iosInitialization,
+      linux: linuxInitialization,
     );
 
     await _localNotifications.initialize(settings);

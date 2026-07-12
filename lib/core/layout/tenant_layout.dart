@@ -165,7 +165,7 @@ class TenantTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double fontScale(_) => fontScale;
+    double _fontScale(_) => fontScale;
     final isNarrow = MediaQuery.of(context).size.width < 900;
 
     return Container(
@@ -199,7 +199,7 @@ class TenantTopBar extends StatelessWidget {
                     'Biru Laut',
                     style: TextStyle(
                       fontFamily: 'Manrope',
-                      fontSize: 16 * fontScale(context),
+                      fontSize: 16 * _fontScale(context),
                       fontWeight: FontWeight.w800,
                       color: TenantColors.primary,
                     ),
