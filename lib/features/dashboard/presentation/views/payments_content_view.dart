@@ -31,6 +31,8 @@ class PaymentsContentView extends StatefulWidget {
 class _PaymentsContentViewState extends State<PaymentsContentView> {
   late PaymentsBloc _paymentsBloc;
   bool _isSessionExpiredDialogVisible = false;
+  int _pageIndex = 0;
+  static const int _pageSize = 10;
 
   @override
   void didChangeDependencies() {
@@ -39,6 +41,7 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
   }
 
   void _reloadPayments() {
+    setState(() => _pageIndex = 0);
     _paymentsBloc.add(
       PaymentsFetched(status: _paymentsBloc.state.selectedFilter),
     );
@@ -48,7 +51,14 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
     if (_paymentsBloc.state.selectedFilter == filter) {
       return;
     }
+    setState(() => _pageIndex = 0);
     _paymentsBloc.add(PaymentFilterChanged(filter));
+  }
+
+  void _setPage(int page) {
+    setState(() {
+      _pageIndex = page;
+    });
   }
 
   Future<void> _onExportData() async {
@@ -405,10 +415,30 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
       );
     }
 
+    final totalPages = (entries.length / _pageSize).ceil().clamp(1, 999);
+    final safePage = _pageIndex.clamp(0, totalPages - 1);
+    if (safePage != _pageIndex) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        setState(() => _pageIndex = safePage);
+      });
+    }
+
+    final start = safePage * _pageSize;
+    final end = (start + _pageSize).clamp(0, entries.length);
+    final pageEntries = entries.sublist(start, end);
+
     return isMobile
         ? PaymentMobileList(
-            entries: entries,
-            onReload: _reloadPayments,
+            entries: pageEntries,
+            totalEntries: entries.length,
+            startEntry: start + 1,
+            endEntry: end,
+            currentPage: safePage,
+            totalPages: totalPages,
+            onPageChanged: _setPage,
             onVerifyPayment: (entry) => _onUpdatePaymentStatus(
               context,
               entry,
@@ -423,8 +453,13 @@ class _PaymentsContentViewState extends State<PaymentsContentView> {
             verifyingPaymentIds: state.verifyingPaymentIds,
           )
         : PaymentDesktopTable(
-            entries: entries,
-            onReload: _reloadPayments,
+            entries: pageEntries,
+            totalEntries: entries.length,
+            startEntry: start + 1,
+            endEntry: end,
+            currentPage: safePage,
+            totalPages: totalPages,
+            onPageChanged: _setPage,
             onViewDetailPayment: (entry) => _showVerifiedPaymentDetail(entry),
             onShowProofFile: (entry) => _showProofFile(context, entry),
             onVerifyPayment: (entry) => _onUpdatePaymentStatus(
@@ -627,188 +662,421 @@ class _VerifiedPaymentDetailDialog extends StatelessWidget {
     final amountDigits = int.tryParse(
       entry.amount.replaceAll(RegExp(r'[^0-9]'), ''),
     );
+    final tenantDisplay = _buildTenantDisplay();
+    final paymentMethod = (entry.paymentMethod ?? '').trim().isEmpty
+        ? 'Upload Mandiri'
+        : entry.paymentMethod!.trim();
+    final verificationLine = _buildVerificationLine();
+    final proofUrl = entry.proofFileUrl;
+    final hasProof = proofUrl != null && proofUrl.isNotEmpty;
+    final proofType = proofExtension(entry);
+    final note = (entry.tenantNote ?? '').trim().isEmpty
+        ? '"Pembayaran sewa bulan ${entry.month} lunas. Terima kasih."'
+        : '"${entry.tenantNote!.trim()}"';
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      backgroundColor: Colors.white,
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: isDesktop ? 560 : 360),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'Detail Pembayaran',
-                      style: TextStyle(
-                        fontSize: 28,
-                        color: Color(0xFF111827),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close, size: 18),
-                    style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xFFF3F4F6),
-                      foregroundColor: const Color(0xFF6B7280),
-                      minimumSize: const Size(28, 28),
-                      padding: EdgeInsets.zero,
-                    ),
-                  ),
-                ],
-              ),
-              Text(
-                'ID Transaksi: ${entry.paymentId.isEmpty ? '-' : entry.paymentId}',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF6B7280),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Divider(height: 1, color: Color(0xFFE5E7EB)),
-              const SizedBox(height: 16),
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD1FAE5),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.check_circle_outline,
-                        size: 15,
-                        color: Color(0xFF065F46),
-                      ),
-                      SizedBox(width: 6),
-                      Text(
-                        'TERVERIFIKASI',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF065F46),
-                          fontWeight: FontWeight.w700,
+        constraints: BoxConstraints(
+          maxWidth: isDesktop ? 780 : 380,
+          maxHeight: MediaQuery.of(context).size.height * 0.92,
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Detail Pembayaran',
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Color(0xFF111827),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              _detailGridItem('PENYEWA', entry.tenantName),
-              const SizedBox(height: 10),
-              _detailGridItem('UNIT/KAMAR', entry.unit),
-              const SizedBox(height: 10),
-              _detailGridItem('BULAN SEWA', entry.month),
-              const SizedBox(height: 10),
-              _detailGridItem(
-                'JUMLAH PEMBAYARAN',
-                amountDigits == null
-                    ? entry.amount
-                    : currencyIdr.format(amountDigits),
-                valueColor: const Color(0xFF005D90),
-                valueWeight: FontWeight.w700,
-              ),
-              const SizedBox(height: 10),
-              _detailGridItem('TANGGAL TRANSFER', entry.date),
-              const SizedBox(height: 14),
-              const Divider(height: 1, color: Color(0xFFE5E7EB)),
-              const SizedBox(height: 12),
-              const Row(
-                children: [
-                  Icon(Icons.verified, size: 16, color: Color(0xFF047857)),
-                  SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'Diverifikasi oleh: Manager Aktif',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF374151),
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close, size: 16),
+                          style: IconButton.styleFrom(
+                            backgroundColor: const Color(0xFFE5E7EB),
+                            foregroundColor: const Color(0xFF6B7280),
+                            minimumSize: const Size(24, 24),
+                            padding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'ID Transaksi: ${entry.paymentId.isEmpty ? '-' : entry.paymentId}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'BUKTI PEMBAYARAN',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF64748B),
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.4,
+                    const SizedBox(height: 14),
+                    const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                    const SizedBox(height: 18),
+                    Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD1FAE5),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_circle_outline,
+                              size: 14,
+                              color: Color(0xFF065F46),
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              'TERVERIFIKASI',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF065F46),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  TextButton.icon(
-                    onPressed: onViewProof,
-                    icon: const Icon(Icons.download_rounded, size: 14),
-                    label: const Text('Unduh'),
-                  ),
-                ],
+                    const SizedBox(height: 18),
+                    _buildDetailLayout(
+                      isDesktop: isDesktop,
+                      tenantDisplay: tenantDisplay,
+                      amountValue: amountDigits == null
+                          ? entry.amount
+                          : currencyIdr.format(amountDigits),
+                      paymentMethod: paymentMethod,
+                    ),
+                    const SizedBox(height: 14),
+                    const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                    const SizedBox(height: 14),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(top: 2),
+                          child: Icon(
+                            Icons.verified_rounded,
+                            size: 14,
+                            color: Color(0xFF047857),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            verificationLine,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF475569),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'BUKTI PEMBAYARAN',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: hasProof ? onViewProof : null,
+                          icon: const Icon(Icons.download_rounded, size: 14),
+                          label: const Text('Unduh'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF005D90),
+                            textStyle: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            minimumSize: const Size(0, 30),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    _buildProofPreview(
+                      hasProof: hasProof,
+                      proofUrl: proofUrl,
+                      proofType: proofType,
+                      isDesktop: isDesktop,
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'CATATAN PENYEWA',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            note,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF374151),
+                              fontStyle: FontStyle.italic,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.only(top: 6),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 16,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: OutlinedButton.icon(
-                  onPressed: onViewProof,
-                  icon: const Icon(Icons.receipt_long_rounded, size: 16),
-                  label: const Text('Lihat Bukti Pembayaran'),
-                ),
+            ),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF8FAFC),
+                border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
               ),
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: const Text(
-                  '"Pembayaran telah diverifikasi. Terima kasih."',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF374151),
-                    fontStyle: FontStyle.italic,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Align(
+              child: Align(
                 alignment: Alignment.centerRight,
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(context).pop(),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF475569),
+                    side: const BorderSide(color: Color(0xFFD1D5DB)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
+                  ),
                   child: const Text('Tutup'),
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _buildTenantDisplay() {
+    final code = (entry.tenantCode ?? '').trim();
+    if (code.isEmpty || entry.tenantName == '-') {
+      return entry.tenantName;
+    }
+    return '${entry.tenantName}  ($code)';
+  }
+
+  String _buildVerificationLine() {
+    final by = (entry.verificationBy ?? '').trim().isEmpty
+        ? 'Manager Aktif'
+        : entry.verificationBy!.trim();
+    final at = (entry.verifiedAtLabel ?? '').trim();
+    if (at.isEmpty || at == '-') {
+      return 'Diverifikasi oleh: $by';
+    }
+    return 'Diverifikasi oleh: $by • $at';
+  }
+
+  Widget _buildDetailLayout({
+    required bool isDesktop,
+    required String tenantDisplay,
+    required String amountValue,
+    required String paymentMethod,
+  }) {
+    if (!isDesktop) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _detailGridItem('PENYEWA', tenantDisplay),
+          const SizedBox(height: 12),
+          _detailGridItem('UNIT/KAMAR', entry.unit),
+          const SizedBox(height: 12),
+          _detailGridItem('BULAN SEWA', entry.month),
+          const SizedBox(height: 12),
+          _detailGridItem(
+            'JUMLAH PEMBAYARAN',
+            amountValue,
+            valueColor: const Color(0xFF005D90),
+            valueWeight: FontWeight.w700,
+          ),
+          const SizedBox(height: 12),
+          _detailGridItem('METODE', paymentMethod, isBadge: true),
+          const SizedBox(height: 12),
+          _detailGridItem('TANGGAL TRANSFER', entry.date),
+        ],
+      );
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _detailGridItem('PENYEWA', tenantDisplay),
+              const SizedBox(height: 14),
+              _detailGridItem('BULAN SEWA', entry.month),
+              const SizedBox(height: 14),
+              _detailGridItem('METODE', paymentMethod, isBadge: true),
             ],
           ),
         ),
+        const SizedBox(width: 32),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _detailGridItem('UNIT/KAMAR', entry.unit),
+              const SizedBox(height: 14),
+              _detailGridItem(
+                'JUMLAH PEMBAYARAN',
+                amountValue,
+                valueColor: const Color(0xFF005D90),
+                valueWeight: FontWeight.w700,
+              ),
+              const SizedBox(height: 14),
+              _detailGridItem('TANGGAL TRANSFER', entry.date),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProofPreview({
+    required bool hasProof,
+    required String? proofUrl,
+    required String proofType,
+    required bool isDesktop,
+  }) {
+    return InkWell(
+      onTap: hasProof ? onViewProof : null,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: double.infinity,
+        height: isDesktop ? 290 : 220,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: _buildProofContent(
+            hasProof: hasProof,
+            proofUrl: proofUrl,
+            proofType: proofType,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProofContent({
+    required bool hasProof,
+    required String? proofUrl,
+    required String proofType,
+  }) {
+    if (!hasProof || proofUrl == null || proofUrl.isEmpty) {
+      return const Center(
+        child: Text(
+          'Bukti pembayaran belum tersedia.',
+          style: TextStyle(
+            fontSize: 13,
+            color: Color(0xFF64748B),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+    }
+
+    if (proofType == 'pdf') {
+      return const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.picture_as_pdf_rounded,
+              size: 34,
+              color: Color(0xFFEF4444),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'File PDF tersedia',
+              style: TextStyle(
+                fontSize: 13,
+                color: Color(0xFF334155),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Klik untuk melihat dokumen',
+              style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final normalizedUrl = normalizeProofUrl(proofUrl);
+    print('Normalized proof URL: $normalizedUrl, \n Original: $proofUrl');
+    if (kIsWeb) {
+      return web_network_image_embed.buildWebNetworkImageEmbed(normalizedUrl);
+    }
+
+    return CachedNetworkImage(
+      imageUrl: normalizedUrl,
+      fit: BoxFit.contain,
+      placeholder: (context, url) =>
+          const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      errorWidget: (context, url, error) => const Center(
+        child: Icon(Icons.broken_image_rounded, color: Color(0xFF94A3B8)),
       ),
     );
   }
@@ -818,6 +1086,7 @@ class _VerifiedPaymentDetailDialog extends StatelessWidget {
     String value, {
     Color valueColor = const Color(0xFF111827),
     FontWeight valueWeight = FontWeight.w600,
+    bool isBadge = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -832,14 +1101,31 @@ class _VerifiedPaymentDetailDialog extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 15,
-            color: valueColor,
-            fontWeight: valueWeight,
+        if (isBadge)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 12,
+                color: valueColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          )
+        else
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 15,
+              color: valueColor,
+              fontWeight: valueWeight,
+            ),
           ),
-        ),
       ],
     );
   }
