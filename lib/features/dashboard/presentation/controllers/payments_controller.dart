@@ -61,12 +61,21 @@ class PaymentsRepository {
       final paymentId = _asString(
         map['id_payment'] ?? map['payment_id'] ?? map['id'] ?? map['paymentId'],
       );
+      final verifiedAtRaw = _asString(
+        map['verified_at'] ??
+            map['verification_date'] ??
+            map['verification_at'] ??
+            map['updated_at'],
+      );
 
       return PaymentVerificationItem(
         paymentId: paymentId,
         no: _formatIndex(index + 1),
         initials: _buildInitials(tenantName.isEmpty ? roomCode : tenantName),
         tenantName: tenantName.isEmpty ? '-' : tenantName,
+        tenantCode: _asNullableString(
+          tenant['tenant_code'] ?? map['tenant_code'] ?? map['tenantCode'],
+        ),
         unit: unitLabel.isEmpty ? '-' : unitLabel,
         month: _formatPeriod(paymentMonth, paymentYear),
         amount: _formatCurrency(map['amount']),
@@ -88,6 +97,27 @@ class PaymentsRepository {
         ),
         proofFileName: _asNullableString(
           map['proof_file_name'] ?? map['proofFileName'],
+        ),
+        paymentMethod: _asNullableString(
+          map['payment_method'] ??
+              map['method'] ??
+              map['transfer_method'] ??
+              map['paymentMethod'],
+        ),
+        verificationBy: _asNullableString(
+          map['verified_by_name'] ??
+              map['verified_by'] ??
+              map['verifiedBy'] ??
+              map['verified_by_user_name'],
+        ),
+        verifiedAtLabel: verifiedAtRaw.isEmpty
+            ? null
+            : _formatDateTimeLabel(verifiedAtRaw),
+        tenantNote: _asNullableString(
+          map['tenant_note'] ??
+              map['verification_note'] ??
+              map['note'] ??
+              map['description'],
         ),
       );
     }).toList();
@@ -403,6 +433,36 @@ class PaymentsRepository {
     return '$day ${months[date.month - 1]} ${date.year}';
   }
 
+  String _formatDateTimeLabel(String raw) {
+    if (raw.isEmpty) {
+      return '-';
+    }
+
+    final parsed = DateTime.tryParse(raw);
+    if (parsed == null) {
+      return raw;
+    }
+
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
+    ];
+    final day = parsed.day.toString().padLeft(2, '0');
+    final hour = parsed.hour.toString().padLeft(2, '0');
+    final minute = parsed.minute.toString().padLeft(2, '0');
+    return '$day ${months[parsed.month - 1]} ${parsed.year}, $hour:$minute';
+  }
+
   int _avatarColorKey(String value) {
     if (value.trim().isEmpty) {
       return 0;
@@ -597,6 +657,7 @@ class PaymentVerificationItem {
   final String no;
   final String initials;
   final String tenantName;
+  final String? tenantCode;
   final String unit;
   final String month;
   final String amount;
@@ -605,12 +666,17 @@ class PaymentVerificationItem {
   final int avatarColorKey;
   final String? proofFileUrl;
   final String? proofFileName;
+  final String? paymentMethod;
+  final String? verificationBy;
+  final String? verifiedAtLabel;
+  final String? tenantNote;
 
   const PaymentVerificationItem({
     required this.paymentId,
     required this.no,
     required this.initials,
     required this.tenantName,
+    this.tenantCode,
     required this.unit,
     required this.month,
     required this.amount,
@@ -619,6 +685,10 @@ class PaymentVerificationItem {
     required this.avatarColorKey,
     this.proofFileUrl,
     this.proofFileName,
+    this.paymentMethod,
+    this.verificationBy,
+    this.verifiedAtLabel,
+    this.tenantNote,
   });
 
   factory PaymentVerificationItem.empty({required int index}) {
@@ -627,6 +697,7 @@ class PaymentVerificationItem {
       no: index < 9 ? '0${index + 1}' : '${index + 1}',
       initials: '--',
       tenantName: '-',
+      tenantCode: null,
       unit: '-',
       month: '-',
       amount: '-',
@@ -635,6 +706,10 @@ class PaymentVerificationItem {
       avatarColorKey: 0,
       proofFileUrl: null,
       proofFileName: null,
+      paymentMethod: null,
+      verificationBy: null,
+      verifiedAtLabel: null,
+      tenantNote: null,
     );
   }
 
@@ -643,6 +718,7 @@ class PaymentVerificationItem {
     String? no,
     String? initials,
     String? tenantName,
+    String? tenantCode,
     String? unit,
     String? month,
     String? amount,
@@ -651,12 +727,17 @@ class PaymentVerificationItem {
     int? avatarColorKey,
     String? proofFileUrl,
     String? proofFileName,
+    String? paymentMethod,
+    String? verificationBy,
+    String? verifiedAtLabel,
+    String? tenantNote,
   }) {
     return PaymentVerificationItem(
       paymentId: paymentId ?? this.paymentId,
       no: no ?? this.no,
       initials: initials ?? this.initials,
       tenantName: tenantName ?? this.tenantName,
+      tenantCode: tenantCode ?? this.tenantCode,
       unit: unit ?? this.unit,
       month: month ?? this.month,
       amount: amount ?? this.amount,
@@ -665,6 +746,10 @@ class PaymentVerificationItem {
       avatarColorKey: avatarColorKey ?? this.avatarColorKey,
       proofFileUrl: proofFileUrl ?? this.proofFileUrl,
       proofFileName: proofFileName ?? this.proofFileName,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      verificationBy: verificationBy ?? this.verificationBy,
+      verifiedAtLabel: verifiedAtLabel ?? this.verifiedAtLabel,
+      tenantNote: tenantNote ?? this.tenantNote,
     );
   }
 }

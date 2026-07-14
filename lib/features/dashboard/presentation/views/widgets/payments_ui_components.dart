@@ -849,7 +849,13 @@ class _PaymentExportFilterDialogState extends State<PaymentExportFilterDialog> {
 
 class PaymentDesktopTable extends StatelessWidget {
   final List<PaymentVerificationItem> entries;
-  final VoidCallback onReload;
+  final int totalEntries;
+  final int startEntry;
+  final int endEntry;
+  final int currentPage;
+  final int totalPages;
+  final ValueChanged<int> onPageChanged;
+  final ValueChanged<PaymentVerificationItem> onViewDetailPayment;
   final ValueChanged<PaymentVerificationItem> onShowProofFile;
   final ValueChanged<PaymentVerificationItem> onVerifyPayment;
   final ValueChanged<PaymentVerificationItem> onRejectPayment;
@@ -858,7 +864,13 @@ class PaymentDesktopTable extends StatelessWidget {
   const PaymentDesktopTable({
     super.key,
     required this.entries,
-    required this.onReload,
+    required this.totalEntries,
+    required this.startEntry,
+    required this.endEntry,
+    required this.currentPage,
+    required this.totalPages,
+    required this.onPageChanged,
+    required this.onViewDetailPayment,
     required this.onShowProofFile,
     required this.onVerifyPayment,
     required this.onRejectPayment,
@@ -893,7 +905,7 @@ class PaymentDesktopTable extends StatelessWidget {
           ),
         ),
         for (final entry in entries) _desktopRow(entry, context),
-        _tableFooter(entries.length),
+        _tableFooter(),
       ],
     );
   }
@@ -949,6 +961,7 @@ class PaymentDesktopTable extends StatelessWidget {
                 onViewImage: () => onShowProofFile(entry),
                 onVerify: () => onVerifyPayment(entry),
                 onReject: () => onRejectPayment(entry),
+                viewDetailPayment: () => onViewDetailPayment(entry),
                 isVerifying: verifyingPaymentIds.contains(entry.paymentId),
               ),
             ),
@@ -958,7 +971,7 @@ class PaymentDesktopTable extends StatelessWidget {
     );
   }
 
-  Widget _tableFooter(int totalEntries) {
+  Widget _tableFooter() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: const BoxDecoration(
@@ -968,7 +981,7 @@ class PaymentDesktopTable extends StatelessWidget {
       child: Row(
         children: [
           Text(
-            'Menampilkan $totalEntries entri',
+            'Showing $startEntry to $endEntry of $totalEntries entries',
             style: const TextStyle(
               fontSize: 13,
               color: Color(0xFF6B7280),
@@ -976,10 +989,10 @@ class PaymentDesktopTable extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          TextButton.icon(
-            onPressed: onReload,
-            icon: const Icon(Icons.refresh, size: 16),
-            label: const Text('Refresh'),
+          _ManagerPaginationControls(
+            currentPage: currentPage,
+            totalPages: totalPages,
+            onPageChanged: onPageChanged,
           ),
         ],
       ),
@@ -989,7 +1002,13 @@ class PaymentDesktopTable extends StatelessWidget {
 
 class PaymentMobileList extends StatelessWidget {
   final List<PaymentVerificationItem> entries;
-  final VoidCallback onReload;
+  final int totalEntries;
+  final int startEntry;
+  final int endEntry;
+  final int currentPage;
+  final int totalPages;
+  final ValueChanged<int> onPageChanged;
+  final ValueChanged<PaymentVerificationItem> onViewDetailPayment;
   final ValueChanged<PaymentVerificationItem> onVerifyPayment;
   final ValueChanged<PaymentVerificationItem> onRejectPayment;
   final Set<String> verifyingPaymentIds;
@@ -997,7 +1016,13 @@ class PaymentMobileList extends StatelessWidget {
   const PaymentMobileList({
     super.key,
     required this.entries,
-    required this.onReload,
+    required this.totalEntries,
+    required this.startEntry,
+    required this.endEntry,
+    required this.currentPage,
+    required this.totalPages,
+    required this.onPageChanged,
+    required this.onViewDetailPayment,
     required this.onVerifyPayment,
     required this.onRejectPayment,
     required this.verifyingPaymentIds,
@@ -1072,6 +1097,7 @@ class PaymentMobileList extends StatelessWidget {
                     status: entry.status,
                     onVerify: () => onVerifyPayment(entry),
                     onReject: () => onRejectPayment(entry),
+                    viewDetailPayment: () => onViewDetailPayment(entry),
                     isVerifying: verifyingPaymentIds.contains(entry.paymentId),
                   ),
                 ),
@@ -1084,7 +1110,7 @@ class PaymentMobileList extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Menampilkan ${entries.length} entri',
+                  'Showing $startEntry to $endEntry of $totalEntries entries',
                   style: const TextStyle(
                     fontSize: 13,
                     color: Color(0xFF6B7280),
@@ -1092,11 +1118,167 @@ class PaymentMobileList extends StatelessWidget {
                   ),
                 ),
               ),
-              TextButton(onPressed: onReload, child: const Text('Refresh')),
+              _ManagerPaginationControls(
+                currentPage: currentPage,
+                totalPages: totalPages,
+                onPageChanged: onPageChanged,
+              ),
             ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ManagerPaginationControls extends StatelessWidget {
+  final int currentPage;
+  final int totalPages;
+  final ValueChanged<int> onPageChanged;
+
+  const _ManagerPaginationControls({
+    required this.currentPage,
+    required this.totalPages,
+    required this.onPageChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final visiblePages = _resolveVisiblePages(
+      currentPage: currentPage,
+      totalPages: totalPages,
+      maxVisiblePages: 3,
+    );
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _PaginationIconButton(
+          icon: Icons.chevron_left,
+          enabled: currentPage > 0,
+          onTap: currentPage > 0 ? () => onPageChanged(currentPage - 1) : null,
+        ),
+        const SizedBox(width: 8),
+        for (var i = 0; i < visiblePages.length; i++) ...[
+          _PaginationNumberButton(
+            number: visiblePages[i] + 1,
+            active: visiblePages[i] == currentPage,
+            onTap: () => onPageChanged(visiblePages[i]),
+          ),
+          if (i < visiblePages.length - 1) const SizedBox(width: 8),
+        ],
+        const SizedBox(width: 8),
+        _PaginationIconButton(
+          icon: Icons.chevron_right,
+          enabled: currentPage < totalPages - 1,
+          onTap: currentPage < totalPages - 1
+              ? () => onPageChanged(currentPage + 1)
+              : null,
+        ),
+      ],
+    );
+  }
+
+  List<int> _resolveVisiblePages({
+    required int currentPage,
+    required int totalPages,
+    required int maxVisiblePages,
+  }) {
+    if (totalPages <= maxVisiblePages) {
+      return List<int>.generate(totalPages, (index) => index);
+    }
+
+    final half = maxVisiblePages ~/ 2;
+    var start = currentPage - half;
+    var end = start + maxVisiblePages;
+
+    if (start < 0) {
+      start = 0;
+      end = maxVisiblePages;
+    } else if (end > totalPages) {
+      end = totalPages;
+      start = end - maxVisiblePages;
+    }
+
+    return List<int>.generate(end - start, (index) => start + index);
+  }
+}
+
+class _PaginationIconButton extends StatelessWidget {
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback? onTap;
+
+  const _PaginationIconButton({
+    required this.icon,
+    required this.enabled,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: enabled ? Colors.white : const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: enabled ? const Color(0xFFE5E7EB) : const Color(0xFFE5E7EB),
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Icon(
+          icon,
+          size: 16,
+          color: enabled ? const Color(0xFF374151) : const Color(0xFF9CA3AF),
+        ),
+      ),
+    );
+  }
+}
+
+class _PaginationNumberButton extends StatelessWidget {
+  final int number;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _PaginationNumberButton({
+    required this.number,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: 32,
+        height: 32,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: active ? ConstantColor.primaryColor : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: active
+                ? ConstantColor.primaryColor
+                : const Color(0xFFE5E7EB),
+          ),
+        ),
+        child: Text(
+          '$number',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: active ? Colors.white : const Color(0xFF374151),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1126,6 +1308,7 @@ class PaymentActionWidget extends StatelessWidget {
   final VoidCallback? onViewImage;
   final VoidCallback? onVerify;
   final VoidCallback? onReject;
+  final VoidCallback? viewDetailPayment;
   final bool isVerifying;
 
   const PaymentActionWidget({
@@ -1134,6 +1317,7 @@ class PaymentActionWidget extends StatelessWidget {
     this.onViewImage,
     this.onVerify,
     this.onReject,
+    this.viewDetailPayment,
     this.isVerifying = false,
   });
 
@@ -1171,12 +1355,15 @@ class PaymentActionWidget extends StatelessWidget {
     }
 
     if (status == PaymentVerificationStatus.verified) {
-      return const Text(
-        'Detail',
-        style: TextStyle(
-          fontSize: 13,
-          color: Color(0xFF374151),
-          fontWeight: FontWeight.w600,
+      return GestureDetector(
+        onTap: viewDetailPayment,
+        child: const Text(
+          'Detail',
+          style: TextStyle(
+            fontSize: 13,
+            color: Color(0xFF374151),
+            fontWeight: FontWeight.w600,
+          ),
         ),
       );
     }
