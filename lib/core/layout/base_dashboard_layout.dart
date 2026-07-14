@@ -246,32 +246,32 @@ class BaseDashboardLayout extends StatelessWidget {
                     }
                   },
                 ),
-                _buildNavItem(
-                  Icons.build_outlined,
-                  "Maintenance",
-                  activeMenu == "Maintenance",
-                  () {
-                    if (isMobile) Navigator.pop(context);
-                    if (userController.isManager) {
-                      context.go(RouteName.managerMaintenancePage);
-                    } else {
-                      userController.changeMenu("Maintenance");
-                    }
-                  },
-                ),
-                _buildNavItem(
-                  Icons.settings_outlined,
-                  "Settings",
-                  activeMenu == "Settings",
-                  () {
-                    if (isMobile) Navigator.pop(context);
-                    if (userController.isManager) {
-                      context.go(RouteName.managerSettingsPage);
-                    } else {
-                      userController.changeMenu("Settings");
-                    }
-                  },
-                ),
+                // _buildNavItem(
+                //   Icons.build_outlined,
+                //   "Maintenance",
+                //   activeMenu == "Maintenance",
+                //   () {
+                //     if (isMobile) Navigator.pop(context);
+                //     if (userController.isManager) {
+                //       context.go(RouteName.managerMaintenancePage);
+                //     } else {
+                //       userController.changeMenu("Maintenance");
+                //     }
+                //   },
+                // ),
+                // _buildNavItem(
+                //   Icons.settings_outlined,
+                //   "Settings",
+                //   activeMenu == "Settings",
+                //   () {
+                //     if (isMobile) Navigator.pop(context);
+                //     if (userController.isManager) {
+                //       context.go(RouteName.managerSettingsPage);
+                //     } else {
+                //       userController.changeMenu("Settings");
+                //     }
+                //   },
+                // ),
                 _buildNavItem(
                   Icons.help_outline,
                   "Support",
