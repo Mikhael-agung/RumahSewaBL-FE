@@ -10,17 +10,21 @@ import 'package:rumah_sewa_biru_laut_fe/features/dashboard/bindings/properties_b
 class PropertiesContentView extends StatelessWidget {
   const PropertiesContentView({super.key});
 
+  PropertiesController _getController() {
+    if (!Get.isRegistered<PropertiesController>()) {
+      PropertiesBinding().dependencies();
+    }
+    return Get.find<PropertiesController>();
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isMobile = MediaQuery.of(context).size.width < 600;
-    
-    // Initialize Clean Architecture dependencies
-    PropertiesBinding().dependencies();
-    final controller = Get.find<PropertiesController>();
-    
+    final controller = _getController();
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
         Text(
           "Properties",
           style: TextStyle(
@@ -45,53 +49,61 @@ class PropertiesContentView extends StatelessWidget {
             children: [
               LayoutBuilder(
                 builder: (context, constraints) {
-                  if (constraints.maxWidth < 600) {
-                    return GridView.count(
-                      crossAxisCount: 1,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      childAspectRatio: 3.2,
-                      children: _getMetricCards(context, controller),
-                    );
-                  } else if (constraints.maxWidth < 950) {
-                    return GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 20,
-                      crossAxisSpacing: 20,
-                      childAspectRatio: 1.6,
-                      children: _getMetricCards(context, controller),
-                    );
-                  } else {
-                    double cardWidth = (constraints.maxWidth - 72) / 4;
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: _getMetricCards(context, controller).map((card) => SizedBox(width: cardWidth, child: card)).toList(),
-                    );
-                  }
+                  return Obx(() {
+                    if (constraints.maxWidth < 600) {
+                      return GridView.count(
+                        crossAxisCount: 1,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        childAspectRatio: 3.2,
+                        children: _getMetricCards(context, controller),
+                      );
+                    } else if (constraints.maxWidth < 950) {
+                      return GridView.count(
+                        crossAxisCount: 2,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        mainAxisSpacing: 20,
+                        crossAxisSpacing: 20,
+                        childAspectRatio: 1.6,
+                        children: _getMetricCards(context, controller),
+                      );
+                    } else {
+                      final double cardWidth = (constraints.maxWidth - 72) / 4;
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: _getMetricCards(
+                          context,
+                          controller,
+                        ).map((card) => SizedBox(width: cardWidth, child: card)).toList(),
+                      );
+                    }
+                  });
                 },
               ),
               const SizedBox(height: 32),
 
               // 2. Daftar Gedung Card
-              _buildGedungCard(context, controller),
+            _buildGedungCard(context, controller),
               const SizedBox(height: 32),
 
               // 3. Daftar Kamar Card
-              _buildKamarCard(context, controller),
-            ],
-          ),
+            _buildKamarCard(context, controller),
+          ],
+        ),
       ],
-    );
+      );
   }
 
   // ==========================================
   // METRICS BUILDER
   // ==========================================
-  List<Widget> _getMetricCards(BuildContext context, PropertiesController controller) {
+  List<Widget> _getMetricCards(
+    BuildContext context,
+    PropertiesController controller,
+  ) {
     final bool buildingsLoading = controller.isBuildingsLoading.value;
     final bool generalLoading = controller.isLoading.value;
 
@@ -115,7 +127,9 @@ class PropertiesContentView extends StatelessWidget {
       _buildMetricCard(
         context,
         "Kamar Terisi",
-        generalLoading ? "..." : "${controller.rooms.where((r) => r.roomStatus == 'occupied').length}",
+        generalLoading
+            ? "..."
+            : "${controller.rooms.where((r) => r.roomStatus == 'occupied').length}",
         Icons.check_circle_outline_rounded,
         const Color(0xFF0077B6),
         const Color(0xFFE0EFFF),
@@ -123,7 +137,9 @@ class PropertiesContentView extends StatelessWidget {
       _buildMetricCard(
         context,
         "Kamar Kosong",
-        generalLoading ? "..." : "${controller.rooms.where((r) => r.roomStatus == 'available').length}",
+        generalLoading
+            ? "..."
+            : "${controller.rooms.where((r) => r.roomStatus == 'available').length}",
         Icons.hotel_outlined,
         const Color(0xFFD97706),
         const Color(0xFFFEF3C7),
@@ -131,12 +147,19 @@ class PropertiesContentView extends StatelessWidget {
     ];
   }
 
-  Widget _buildMetricCard(BuildContext context, String label, String value, IconData icon, Color iconColor, Color iconBgColor) {
+  Widget _buildMetricCard(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon,
+    Color iconColor,
+    Color iconBgColor,
+  ) {
     final bool isMobile = MediaQuery.of(context).size.width < 600;
-    
+
     return Container(
       padding: EdgeInsets.symmetric(
-        vertical: isMobile ? 12 : 24, 
+        vertical: isMobile ? 12 : 24,
         horizontal: isMobile ? 20 : 16,
       ),
       decoration: BoxDecoration(
@@ -151,90 +174,93 @@ class PropertiesContentView extends StatelessWidget {
         ],
         border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
       ),
-      child: isMobile 
-        ? Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: iconBgColor,
-                  shape: BoxShape.circle,
+      child: isMobile
+          ? Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: iconBgColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: iconColor, size: 20),
                 ),
-                child: Icon(icon, color: iconColor, size: 20),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      label.toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: ConstantColor.textSecondaryColor,
-                        letterSpacing: 0.8,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        label.toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: ConstantColor.textSecondaryColor,
+                          letterSpacing: 0.8,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      value,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: ConstantColor.textPrimaryColor,
+                      const SizedBox(height: 2),
+                      Text(
+                        value,
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: ConstantColor.textPrimaryColor,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          )
-        : Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: iconBgColor,
-                  shape: BoxShape.circle,
+              ],
+            )
+          : Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: iconBgColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: iconColor, size: 24),
                 ),
-                child: Icon(icon, color: iconColor, size: 24),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                label.toUpperCase(),
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: ConstantColor.textSecondaryColor,
-                  letterSpacing: 0.8,
+                const SizedBox(height: 16),
+                Text(
+                  label.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: ConstantColor.textSecondaryColor,
+                    letterSpacing: 0.8,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: ConstantColor.textPrimaryColor,
+                const SizedBox(height: 8),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: ConstantColor.textPrimaryColor,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
     );
   }
 
   // ==========================================
   // DAFTAR GEDUNG CARD
   // ==========================================
-  Widget _buildGedungCard(BuildContext context, PropertiesController controller) {
+  Widget _buildGedungCard(
+    BuildContext context,
+    PropertiesController controller,
+  ) {
     final bool isMobile = MediaQuery.of(context).size.width < 600;
-    
+
     return Container(
       padding: EdgeInsets.all(isMobile ? 16 : 28),
       decoration: BoxDecoration(
@@ -269,12 +295,21 @@ class PropertiesContentView extends StatelessWidget {
                 icon: const Icon(Icons.add, size: 16, color: Colors.white),
                 label: const Text(
                   "Tambah Gedung",
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF005D90),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   elevation: 0,
                 ),
               ),
@@ -285,21 +320,66 @@ class PropertiesContentView extends StatelessWidget {
           // Buildings Table wrapped in scroll view to never overflow on mobile
           Obx(() {
             final bool isLoading = controller.isBuildingsLoading.value;
-            
+            final _ = controller.rooms.length;
+
             return isMobile
                 ? SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        minWidth: 500,
-                      ),
-                      child: isLoading ? _buildGedungShimmer() : _buildGedungTable(context, controller),
+                      constraints: const BoxConstraints(minWidth: 500),
+                      child: isLoading
+                          ? _buildGedungShimmer()
+                          : _buildGedungTable(
+                              context,
+                              controller,
+                              controller.paginatedBuildings,
+                            ),
                     ),
                   )
                 : SizedBox(
                     width: double.infinity,
-                    child: isLoading ? _buildGedungShimmer() : _buildGedungTable(context, controller),
+                    child: isLoading
+                        ? _buildGedungShimmer()
+                        : _buildGedungTable(
+                            context,
+                            controller,
+                            controller.paginatedBuildings,
+                          ),
                   );
+          }),
+          const SizedBox(height: 24),
+          Obx(() {
+            final total = controller.buildings.length;
+            final currentPage = controller.buildingCurrentPage.value;
+            final totalPages = controller.buildingTotalPages;
+            final hasData = total > 0;
+            final startEntry = hasData
+                ? (currentPage * PropertiesController.itemsPerPage) + 1
+                : 0;
+            final endEntry = hasData
+                ? ((currentPage * PropertiesController.itemsPerPage) +
+                          controller.paginatedBuildings.length)
+                      .clamp(0, total)
+                : 0;
+
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Menampilkan $startEntry-$endEntry dari $total gedung",
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+                _PaginationControls(
+                  currentPage: currentPage,
+                  totalPages: totalPages,
+                  onPageChanged: controller.setBuildingPage,
+                ),
+              ],
+            );
           }),
         ],
       ),
@@ -321,31 +401,63 @@ class PropertiesContentView extends StatelessWidget {
         children: [
           const TableRow(
             decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.5)),
+              border: Border(
+                bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.5),
+              ),
             ),
             children: [
               Padding(
                 padding: EdgeInsets.only(bottom: 12.0),
-                child: Text("NO", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                child: Text(
+                  "NO",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ),
               ),
               Padding(
                 padding: EdgeInsets.only(bottom: 12.0),
-                child: Text("NAMA GEDUNG", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                child: Text(
+                  "NAMA GEDUNG",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ),
               ),
               Padding(
                 padding: EdgeInsets.only(bottom: 12.0),
-                child: Text("JUMLAH KAMAR", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                child: Text(
+                  "JUMLAH KAMAR",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ),
               ),
               Padding(
                 padding: EdgeInsets.only(bottom: 12.0),
-                child: Text("AKSI", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                child: Text(
+                  "AKSI",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ),
               ),
             ],
           ),
           ...List.generate(3, (index) {
             return TableRow(
               decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1)),
+                border: Border(
+                  bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1),
+                ),
               ),
               children: [
                 Padding(
@@ -408,7 +520,15 @@ class PropertiesContentView extends StatelessWidget {
     );
   }
 
-  Widget _buildGedungTable(BuildContext context, PropertiesController controller) {
+  Widget _buildGedungTable(
+    BuildContext context,
+    PropertiesController controller,
+    List<Building> buildings,
+  ) {
+    final startIndex =
+        controller.buildingCurrentPage.value *
+        PropertiesController.itemsPerPage;
+
     return Table(
       columnWidths: const {
         0: FlexColumnWidth(1.0), // No
@@ -421,34 +541,66 @@ class PropertiesContentView extends StatelessWidget {
         // Table Header
         const TableRow(
           decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.5)),
+            border: Border(
+              bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.5),
+            ),
           ),
           children: [
             Padding(
               padding: EdgeInsets.only(bottom: 12.0),
-              child: Text("NO", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+              child: Text(
+                "NO",
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
             ),
             Padding(
               padding: EdgeInsets.only(bottom: 12.0),
-              child: Text("NAMA GEDUNG", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+              child: Text(
+                "NAMA GEDUNG",
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
             ),
             Padding(
               padding: EdgeInsets.only(bottom: 12.0),
-              child: Text("JUMLAH KAMAR", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+              child: Text(
+                "JUMLAH KAMAR",
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
             ),
             Padding(
               padding: EdgeInsets.only(bottom: 12.0),
-              child: Text("AKSI", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+              child: Text(
+                "AKSI",
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
             ),
           ],
         ),
-        
+
         // Table Rows from controller data
-        ...controller.buildings.asMap().entries.map((entry) {
-          final index = entry.key + 1;
+        ...buildings.asMap().entries.map((entry) {
+          final index = startIndex + entry.key + 1;
           final building = entry.value;
-          
-          final count = controller.rooms.where((room) => room.buildingId == building.id).length;
+
+          final count = controller.rooms
+              .where((room) => room.buildingId == building.id)
+              .length;
           final roomsCountStr = "$count Kamar";
 
           return _buildGedungRow(
@@ -463,7 +615,13 @@ class PropertiesContentView extends StatelessWidget {
     );
   }
 
-  TableRow _buildGedungRow(BuildContext context, PropertiesController controller, String no, Building building, String roomsCount) {
+  TableRow _buildGedungRow(
+    BuildContext context,
+    PropertiesController controller,
+    String no,
+    Building building,
+    String roomsCount,
+  ) {
     return TableRow(
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1)),
@@ -471,22 +629,68 @@ class PropertiesContentView extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 16.0),
-          child: Text(no, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF64748B))),
+          child: Text(
+            no,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF64748B),
+            ),
+          ),
         ),
-        Text(building.buildingName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-        Text(roomsCount, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+        Text(
+          building.buildingName,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1E293B),
+          ),
+        ),
+        Text(
+          roomsCount,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF64748B),
+          ),
+        ),
         Row(
           children: [
             TextButton(
-              onPressed: () => _showEditBuildingModal(context, controller, building),
-              style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(40, 30)),
-              child: const Text("Edit", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0077B6))),
+              onPressed: () =>
+                  _showEditBuildingModal(context, controller, building),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(40, 30),
+              ),
+              child: const Text(
+                "Edit",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0077B6),
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             TextButton(
-              onPressed: () => _showDeleteBuildingConfirmation(context, controller, building),
-              style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(40, 30)),
-              child: const Text("Hapus", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.red)),
+              onPressed: () => _showDeleteBuildingConfirmation(
+                context,
+                controller,
+                building,
+              ),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(40, 30),
+              ),
+              child: const Text(
+                "Hapus",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
             ),
           ],
         ),
@@ -497,9 +701,12 @@ class PropertiesContentView extends StatelessWidget {
   // ==========================================
   // DAFTAR KAMAR CARD
   // ==========================================
-  Widget _buildKamarCard(BuildContext context, PropertiesController controller) {
+  Widget _buildKamarCard(
+    BuildContext context,
+    PropertiesController controller,
+  ) {
     final bool isMobile = MediaQuery.of(context).size.width < 600;
-    
+
     return Container(
       padding: EdgeInsets.all(isMobile ? 16 : 28),
       decoration: BoxDecoration(
@@ -531,11 +738,16 @@ class PropertiesContentView extends StatelessWidget {
               const SizedBox(width: 12),
               // Dropdown Filter Pill
               Obx(() {
-                final selectedBuildingName = controller.selectedBuildingId.value == null
+                final selectedBuildingName =
+                    controller.selectedBuildingId.value == null
                     ? "Semua Gedung"
                     : controller.buildings
-                        .firstWhereOrNull((b) => b.id == controller.selectedBuildingId.value)
-                        ?.buildingName ?? "Semua Gedung";
+                              .firstWhereOrNull(
+                                (b) =>
+                                    b.id == controller.selectedBuildingId.value,
+                              )
+                              ?.buildingName ??
+                          "Semua Gedung";
 
                 return PopupMenuButton<int>(
                   onSelected: (int buildingId) {
@@ -544,7 +756,9 @@ class PropertiesContentView extends StatelessWidget {
                     } else {
                       controller.selectedBuildingId.value = buildingId;
                     }
-                    debugPrint("Selected Building ID: ${controller.selectedBuildingId.value}");
+                    debugPrint(
+                      "Selected Building ID: ${controller.selectedBuildingId.value}",
+                    );
                   },
                   itemBuilder: (BuildContext context) {
                     return [
@@ -561,7 +775,10 @@ class PropertiesContentView extends StatelessWidget {
                     ];
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(8),
@@ -570,10 +787,18 @@ class PropertiesContentView extends StatelessWidget {
                       children: [
                         Text(
                           selectedBuildingName,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF475569),
+                          ),
                         ),
                         const SizedBox(width: 4),
-                        const Icon(Icons.keyboard_arrow_down, size: 16, color: Color(0xFF475569)),
+                        const Icon(
+                          Icons.keyboard_arrow_down,
+                          size: 16,
+                          color: Color(0xFF475569),
+                        ),
                       ],
                     ),
                   ),
@@ -585,12 +810,21 @@ class PropertiesContentView extends StatelessWidget {
                 icon: const Icon(Icons.add, size: 16, color: Colors.white),
                 label: const Text(
                   "Tambah Kamar",
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF005D90),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   elevation: 0,
                 ),
               ),
@@ -602,48 +836,68 @@ class PropertiesContentView extends StatelessWidget {
           Obx(() {
             final bool isLoading = controller.isRoomsLoading.value;
             final _ = controller.selectedBuildingId.value;
-            
+
             return isMobile
                 ? SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        minWidth: 650,
-                      ),
-                      child: isLoading ? _buildKamarShimmer() : _buildKamarTable(context, controller),
+                      constraints: const BoxConstraints(minWidth: 650),
+                      child: isLoading
+                          ? _buildKamarShimmer()
+                          : _buildKamarTable(
+                              context,
+                              controller,
+                              controller.paginatedRooms,
+                            ),
                     ),
                   )
                 : SizedBox(
                     width: double.infinity,
-                    child: isLoading ? _buildKamarShimmer() : _buildKamarTable(context, controller),
+                    child: isLoading
+                        ? _buildKamarShimmer()
+                        : _buildKamarTable(
+                            context,
+                            controller,
+                            controller.paginatedRooms,
+                          ),
                   );
           }),
           const SizedBox(height: 24),
 
           // Pagination Footer Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Obx(() => Text(
-                "Menampilkan ${controller.filteredRooms.length > 5 ? 5 : controller.filteredRooms.length} dari ${controller.filteredRooms.length} kamar",
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
-              )),
-              // Pagination Controls
-              Row(
-                children: [
-                  _buildPaginationButton("<", isSelected: false),
-                  const SizedBox(width: 8),
-                  _buildPaginationButton("1", isSelected: true),
-                  const SizedBox(width: 8),
-                  _buildPaginationButton("2", isSelected: false),
-                  const SizedBox(width: 8),
-                  _buildPaginationButton("3", isSelected: false),
-                  const SizedBox(width: 8),
-                  _buildPaginationButton(">", isSelected: false),
-                ],
-              ),
-            ],
-          ),
+          Obx(() {
+            final total = controller.filteredRooms.length;
+            final currentPage = controller.roomCurrentPage.value;
+            final totalPages = controller.roomTotalPages;
+            final hasData = total > 0;
+            final startEntry = hasData
+                ? (currentPage * PropertiesController.itemsPerPage) + 1
+                : 0;
+            final endEntry = hasData
+                ? ((currentPage * PropertiesController.itemsPerPage) +
+                          controller.paginatedRooms.length)
+                      .clamp(0, total)
+                : 0;
+
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Menampilkan $startEntry-$endEntry dari $total kamar",
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+                _PaginationControls(
+                  currentPage: currentPage,
+                  totalPages: totalPages,
+                  onPageChanged: controller.setRoomPage,
+                ),
+              ],
+            );
+          }),
         ],
       ),
     );
@@ -665,35 +919,74 @@ class PropertiesContentView extends StatelessWidget {
         children: [
           const TableRow(
             decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.5)),
+              border: Border(
+                bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.5),
+              ),
             ),
             children: [
               Padding(
                 padding: EdgeInsets.only(bottom: 12.0),
-                child: Text("KODE KAMAR", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                child: Text(
+                  "KODE KAMAR",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ),
               ),
               Padding(
                 padding: EdgeInsets.only(bottom: 12.0),
-                child: Text("GEDUNG", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                child: Text(
+                  "GEDUNG",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ),
               ),
               Padding(
                 padding: EdgeInsets.only(bottom: 12.0),
-                child: Text("HARGA SEWA", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                child: Text(
+                  "HARGA SEWA",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ),
               ),
               Padding(
                 padding: EdgeInsets.only(bottom: 12.0),
-                child: Text("STATUS", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                child: Text(
+                  "STATUS",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ),
               ),
               Padding(
                 padding: EdgeInsets.only(bottom: 12.0),
-                child: Text("AKSI", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+                child: Text(
+                  "AKSI",
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF94A3B8),
+                  ),
+                ),
               ),
             ],
           ),
           ...List.generate(3, (index) {
             return TableRow(
               decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1)),
+                border: Border(
+                  bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1),
+                ),
               ),
               children: [
                 Padding(
@@ -769,7 +1062,11 @@ class PropertiesContentView extends StatelessWidget {
     );
   }
 
-  Widget _buildKamarTable(BuildContext context, PropertiesController controller) {
+  Widget _buildKamarTable(
+    BuildContext context,
+    PropertiesController controller,
+    List<Room> rooms,
+  ) {
     return Table(
       columnWidths: const {
         0: FlexColumnWidth(2.0), // Kode Kamar
@@ -783,57 +1080,97 @@ class PropertiesContentView extends StatelessWidget {
         // Table Header
         const TableRow(
           decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.5)),
+            border: Border(
+              bottom: BorderSide(color: Color(0xFFF1F5F9), width: 1.5),
+            ),
           ),
           children: [
             Padding(
               padding: EdgeInsets.only(bottom: 12.0),
-              child: Text("KODE KAMAR", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+              child: Text(
+                "KODE KAMAR",
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
             ),
             Padding(
               padding: EdgeInsets.only(bottom: 12.0),
-              child: Text("GEDUNG", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+              child: Text(
+                "GEDUNG",
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
             ),
             Padding(
               padding: EdgeInsets.only(bottom: 12.0),
-              child: Text("HARGA SEWA", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+              child: Text(
+                "HARGA SEWA",
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
             ),
             Padding(
               padding: EdgeInsets.only(bottom: 12.0),
-              child: Text("STATUS", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+              child: Text(
+                "STATUS",
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
             ),
             Padding(
               padding: EdgeInsets.only(bottom: 12.0),
-              child: Text("AKSI", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8))),
+              child: Text(
+                "AKSI",
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF94A3B8),
+                ),
+              ),
             ),
           ],
         ),
-        
-        // Table Rows from controller data
-        ...controller.filteredRooms.map((room) {
-          final building = controller.buildings.firstWhereOrNull((b) => b.id == room.buildingId);
-          final buildingName = building?.buildingName ?? (room.building?.buildingName ?? '-');
 
-          return _buildKamarRow(
-            context,
-            controller,
-            room,
-            buildingName,
+        // Table Rows from controller data
+        ...rooms.map((room) {
+          final building = controller.buildings.firstWhereOrNull(
+            (b) => b.id == room.buildingId,
           );
+          final buildingName =
+              building?.buildingName ?? (room.building?.buildingName ?? '-');
+
+          return _buildKamarRow(context, controller, room, buildingName);
         }).toList(),
       ],
     );
   }
 
-  TableRow _buildKamarRow(BuildContext context, PropertiesController controller, Room room, String buildingName) {
-    final String displayStatus = room.roomStatus == "occupied" 
-        ? "Terisi" 
+  TableRow _buildKamarRow(
+    BuildContext context,
+    PropertiesController controller,
+    Room room,
+    String buildingName,
+  ) {
+    final String displayStatus = room.roomStatus == "occupied"
+        ? "Terisi"
         : "Kosong";
-    final Color statusPillColor = room.roomStatus == "occupied" 
-        ? const Color(0xFF0077B6) 
+    final Color statusPillColor = room.roomStatus == "occupied"
+        ? const Color(0xFF0077B6)
         : const Color(0xFFE2E8F0);
-    final Color statusTextColor = room.roomStatus == "occupied" 
-        ? Colors.white 
+    final Color statusTextColor = room.roomStatus == "occupied"
+        ? Colors.white
         : const Color(0xFF64748B);
 
     return TableRow(
@@ -843,17 +1180,41 @@ class PropertiesContentView extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 16.0),
-          child: Text(room.roomCode, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+          child: Text(
+            room.roomCode,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
+          ),
         ),
-        Text(buildingName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
-        Text(_formatRupiah(room.monthlyPrice), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+        Text(
+          buildingName,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF64748B),
+          ),
+        ),
+        Text(
+          _formatRupiah(room.monthlyPrice),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1E293B),
+          ),
+        ),
         // Status Pill
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 12.0),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: statusPillColor,
                   borderRadius: BorderRadius.circular(16),
@@ -861,7 +1222,7 @@ class PropertiesContentView extends StatelessWidget {
                 child: Text(
                   displayStatus,
                   style: TextStyle(
-                     fontSize: 10,
+                    fontSize: 10,
                     fontWeight: FontWeight.bold,
                     color: statusTextColor,
                   ),
@@ -874,14 +1235,35 @@ class PropertiesContentView extends StatelessWidget {
           children: [
             TextButton(
               onPressed: () => _showEditRoomModal(context, controller, room),
-              style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(40, 30)),
-              child: const Text("Edit", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0077B6))),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(40, 30),
+              ),
+              child: const Text(
+                "Edit",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0077B6),
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             TextButton(
-              onPressed: () => _showDeleteRoomConfirmation(context, controller, room),
-              style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(40, 30)),
-              child: const Text("Hapus", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.red)),
+              onPressed: () =>
+                  _showDeleteRoomConfirmation(context, controller, room),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(40, 30),
+              ),
+              child: const Text(
+                "Hapus",
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
             ),
           ],
         ),
@@ -889,32 +1271,10 @@ class PropertiesContentView extends StatelessWidget {
     );
   }
 
-  Widget _buildPaginationButton(String label, {required bool isSelected}) {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFF005D90) : Colors.transparent,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: isSelected ? Colors.transparent : const Color(0xFFE2E8F0),
-          width: 1,
-        ),
-      ),
-      child: Center(
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: isSelected ? Colors.white : const Color(0xFF475569),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showAddRoomModal(BuildContext context, PropertiesController controller) {
+  void _showAddRoomModal(
+    BuildContext context,
+    PropertiesController controller,
+  ) {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.5),
@@ -928,7 +1288,10 @@ class PropertiesContentView extends StatelessWidget {
     return 'Rp ${price.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => '.')}';
   }
 
-  void _showAddBuildingModal(BuildContext context, PropertiesController controller) {
+  void _showAddBuildingModal(
+    BuildContext context,
+    PropertiesController controller,
+  ) {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.5),
@@ -938,7 +1301,11 @@ class PropertiesContentView extends StatelessWidget {
     );
   }
 
-  void _showEditBuildingModal(BuildContext context, PropertiesController controller, Building building) {
+  void _showEditBuildingModal(
+    BuildContext context,
+    PropertiesController controller,
+    Building building,
+  ) {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.5),
@@ -948,13 +1315,169 @@ class PropertiesContentView extends StatelessWidget {
     );
   }
 
-  void _showDeleteBuildingConfirmation(BuildContext context, PropertiesController controller, Building building) {
+  void _showDeleteBuildingConfirmation(
+    BuildContext context,
+    PropertiesController controller,
+    Building building,
+  ) {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (context) {
-        return _DeleteBuildingConfirmationDialog(controller: controller, building: building);
+        return _DeleteBuildingConfirmationDialog(
+          controller: controller,
+          building: building,
+        );
       },
+    );
+  }
+}
+
+class _PaginationControls extends StatelessWidget {
+  final int currentPage;
+  final int totalPages;
+  final ValueChanged<int> onPageChanged;
+
+  const _PaginationControls({
+    required this.currentPage,
+    required this.totalPages,
+    required this.onPageChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final visiblePages = _resolveVisiblePages(
+      currentPage: currentPage,
+      totalPages: totalPages,
+      maxVisiblePages: 3,
+    );
+
+    return Row(
+      children: [
+        _PaginationIconButton(
+          icon: Icons.chevron_left,
+          enabled: currentPage > 0,
+          onTap: currentPage > 0 ? () => onPageChanged(currentPage - 1) : null,
+        ),
+        const SizedBox(width: 8),
+        for (int i = 0; i < visiblePages.length; i++) ...[
+          _PaginationNumberButton(
+            number: visiblePages[i] + 1,
+            active: visiblePages[i] == currentPage,
+            onTap: () => onPageChanged(visiblePages[i]),
+          ),
+          if (i != visiblePages.length - 1) const SizedBox(width: 8),
+        ],
+        const SizedBox(width: 8),
+        _PaginationIconButton(
+          icon: Icons.chevron_right,
+          enabled: currentPage < totalPages - 1,
+          onTap: currentPage < totalPages - 1
+              ? () => onPageChanged(currentPage + 1)
+              : null,
+        ),
+      ],
+    );
+  }
+
+  List<int> _resolveVisiblePages({
+    required int currentPage,
+    required int totalPages,
+    required int maxVisiblePages,
+  }) {
+    if (totalPages <= maxVisiblePages) {
+      return List<int>.generate(totalPages, (index) => index);
+    }
+
+    final half = maxVisiblePages ~/ 2;
+    var start = currentPage - half;
+    var end = start + maxVisiblePages;
+
+    if (start < 0) {
+      start = 0;
+      end = maxVisiblePages;
+    } else if (end > totalPages) {
+      end = totalPages;
+      start = end - maxVisiblePages;
+    }
+
+    return List<int>.generate(end - start, (index) => start + index);
+  }
+}
+
+class _PaginationIconButton extends StatelessWidget {
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback? onTap;
+
+  const _PaginationIconButton({
+    required this.icon,
+    required this.enabled,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: enabled ? onTap : null,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: enabled ? Colors.white : const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+        ),
+        alignment: Alignment.center,
+        child: Icon(
+          icon,
+          size: 16,
+          color: enabled ? const Color(0xFF374151) : const Color(0xFF9CA3AF),
+        ),
+      ),
+    );
+  }
+}
+
+class _PaginationNumberButton extends StatelessWidget {
+  final int number;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _PaginationNumberButton({
+    required this.number,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: 32,
+        height: 32,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: active ? ConstantColor.primaryColor : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: active
+                ? ConstantColor.primaryColor
+                : const Color(0xFFE5E7EB),
+          ),
+        ),
+        child: Text(
+          '$number',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: active ? Colors.white : const Color(0xFF374151),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1012,7 +1535,11 @@ class _AddBuildingDialogState extends State<_AddBuildingDialog> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: ConstantColor.textSecondaryColor, size: 20),
+                    icon: const Icon(
+                      Icons.close,
+                      color: ConstantColor.textSecondaryColor,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.pop(context),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -1033,9 +1560,14 @@ class _AddBuildingDialogState extends State<_AddBuildingDialog> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _codeController,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
                 decoration: _buildInputDecoration("Contoh: GDG-A"),
-                validator: (val) => (val == null || val.trim().isEmpty) ? "Kode gedung wajib diisi" : null,
+                validator: (val) => (val == null || val.trim().isEmpty)
+                    ? "Kode gedung wajib diisi"
+                    : null,
               ),
               const SizedBox(height: 16),
 
@@ -1051,9 +1583,14 @@ class _AddBuildingDialogState extends State<_AddBuildingDialog> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _nameController,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
                 decoration: _buildInputDecoration("Contoh: Gedung A"),
-                validator: (val) => (val == null || val.trim().isEmpty) ? "Nama gedung wajib diisi" : null,
+                validator: (val) => (val == null || val.trim().isEmpty)
+                    ? "Nama gedung wajib diisi"
+                    : null,
               ),
               const SizedBox(height: 16),
 
@@ -1069,9 +1606,16 @@ class _AddBuildingDialogState extends State<_AddBuildingDialog> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _addressController,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                decoration: _buildInputDecoration("Contoh: Jl. Contoh No. 1, Surabaya"),
-                validator: (val) => (val == null || val.trim().isEmpty) ? "Alamat gedung wajib diisi" : null,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+                decoration: _buildInputDecoration(
+                  "Contoh: Jl. Contoh No. 1, Surabaya",
+                ),
+                validator: (val) => (val == null || val.trim().isEmpty)
+                    ? "Alamat gedung wajib diisi"
+                    : null,
               ),
               const SizedBox(height: 16),
 
@@ -1087,9 +1631,14 @@ class _AddBuildingDialogState extends State<_AddBuildingDialog> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _descController,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
                 maxLines: 2,
-                decoration: _buildInputDecoration("Contoh: Gedung utama lantai 3"),
+                decoration: _buildInputDecoration(
+                  "Contoh: Gedung utama lantai 3",
+                ),
               ),
               const SizedBox(height: 28),
 
@@ -1098,46 +1647,61 @@ class _AddBuildingDialogState extends State<_AddBuildingDialog> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : () async {
-                    if (_formKey.currentState!.validate()) {
-                      setState(() {
-                        _isLoading = true;
-                      });
-                      final success = await widget.controller.addBuilding(
-                        code: _codeController.text.trim(),
-                        name: _nameController.text.trim(),
-                        address: _addressController.text.trim(),
-                        description: _descController.text.trim(),
-                      );
-                      setState(() {
-                        _isLoading = false;
-                      });
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(success ? "Gedung berhasil ditambahkan!" : "Gedung berhasil ditambahkan secara lokal!"),
-                            backgroundColor: ConstantColor.primaryColor,
-                          ),
-                        );
-                      }
-                    }
-                  },
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          if (_formKey.currentState!.validate()) {
+                            setState(() {
+                              _isLoading = true;
+                            });
+                            final success = await widget.controller.addBuilding(
+                              code: _codeController.text.trim(),
+                              name: _nameController.text.trim(),
+                              address: _addressController.text.trim(),
+                              description: _descController.text.trim(),
+                            );
+                            setState(() {
+                              _isLoading = false;
+                            });
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    success
+                                        ? "Gedung berhasil ditambahkan!"
+                                        : "Gedung berhasil ditambahkan secara lokal!",
+                                  ),
+                                  backgroundColor: ConstantColor.primaryColor,
+                                ),
+                              );
+                            }
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF005D90),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                     elevation: 0,
                   ),
-                  child: _isLoading 
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      )
-                    : const Text(
-                        "Simpan",
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          "Simpan",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -1148,11 +1712,17 @@ class _AddBuildingDialogState extends State<_AddBuildingDialog> {
                   onPressed: () => Navigator.pop(context),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFFE2E8F0)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                   ),
                   child: const Text(
                     "Batal",
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF005D90)),
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF005D90),
+                    ),
                   ),
                 ),
               ),
@@ -1273,7 +1843,11 @@ class _AddRoomDialogState extends State<_AddRoomDialog> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: ConstantColor.textSecondaryColor, size: 20),
+                    icon: const Icon(
+                      Icons.close,
+                      color: ConstantColor.textSecondaryColor,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.pop(context),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -1304,7 +1878,10 @@ class _AddRoomDialogState extends State<_AddRoomDialog> {
                     value: _selectedBuilding,
                     isExpanded: true,
                     decoration: const InputDecoration(border: InputBorder.none),
-                    icon: const Icon(Icons.keyboard_arrow_down, color: ConstantColor.textSecondaryColor),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down,
+                      color: ConstantColor.textSecondaryColor,
+                    ),
                     hint: const Text("Pilih Gedung"),
                     items: widget.controller.buildings.map((building) {
                       return DropdownMenuItem<Building>(
@@ -1317,7 +1894,8 @@ class _AddRoomDialogState extends State<_AddRoomDialog> {
                         _selectedBuilding = val;
                       });
                     },
-                    validator: (val) => val == null ? "Wajib memilih gedung" : null,
+                    validator: (val) =>
+                        val == null ? "Wajib memilih gedung" : null,
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -1341,7 +1919,10 @@ class _AddRoomDialogState extends State<_AddRoomDialog> {
               // Input Kode Kamar
               TextFormField(
                 controller: _kodeController,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
                 decoration: _buildInputDecoration("Contoh: A-101"),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) {
@@ -1365,14 +1946,18 @@ class _AddRoomDialogState extends State<_AddRoomDialog> {
               // Input Harga Sewa
               TextFormField(
                 controller: _hargaController,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
                 keyboardType: TextInputType.number,
                 decoration: _buildInputDecoration("Contoh: 2000000"),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) {
                     return "Harga sewa wajib diisi";
                   }
-                  if (int.tryParse(val.replaceAll(RegExp(r'[^0-9]'), '')) == null) {
+                  if (int.tryParse(val.replaceAll(RegExp(r'[^0-9]'), '')) ==
+                      null) {
                     return "Harga sewa harus berupa angka";
                   }
                   return null;
@@ -1401,10 +1986,19 @@ class _AddRoomDialogState extends State<_AddRoomDialog> {
                   child: DropdownButton<String>(
                     value: _selectedStatus,
                     isExpanded: true,
-                    icon: const Icon(Icons.keyboard_arrow_down, color: ConstantColor.textSecondaryColor),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down,
+                      color: ConstantColor.textSecondaryColor,
+                    ),
                     items: const [
-                      DropdownMenuItem(value: 'available', child: Text('Kosong')),
-                      DropdownMenuItem(value: 'occupied', child: Text('Terisi')),
+                      DropdownMenuItem(
+                        value: 'available',
+                        child: Text('Kosong'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'occupied',
+                        child: Text('Terisi'),
+                      ),
                     ],
                     onChanged: (val) {
                       if (val != null) {
@@ -1435,9 +2029,14 @@ class _AddRoomDialogState extends State<_AddRoomDialog> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _notesController,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
                 maxLines: 2,
-                decoration: _buildInputDecoration("Masukkan catatan kamar jika ada"),
+                decoration: _buildInputDecoration(
+                  "Masukkan catatan kamar jika ada",
+                ),
               ),
               const SizedBox(height: 28),
 
@@ -1446,48 +2045,72 @@ class _AddRoomDialogState extends State<_AddRoomDialog> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : () async {
-                    if (_formKey.currentState!.validate()) {
-                      setState(() {
-                        _isLoading = true;
-                      });
-                      final price = int.tryParse(_hargaController.text.trim().replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-                      final success = await widget.controller.addRoom(
-                        buildingId: _selectedBuilding!.id,
-                        roomCode: _kodeController.text.trim(),
-                        monthlyPrice: price,
-                        roomStatus: _selectedStatus,
-                        notes: _notesController.text.trim(),
-                      );
-                      setState(() {
-                        _isLoading = false;
-                      });
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(success ? "Kamar berhasil ditambahkan!" : "Kamar gagal ditambahkan!"),
-                            backgroundColor: success ? Colors.green : Colors.red,
-                          ),
-                        );
-                      }
-                    }
-                  },
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          if (_formKey.currentState!.validate()) {
+                            setState(() {
+                              _isLoading = true;
+                            });
+                            final price =
+                                int.tryParse(
+                                  _hargaController.text.trim().replaceAll(
+                                    RegExp(r'[^0-9]'),
+                                    '',
+                                  ),
+                                ) ??
+                                0;
+                            final success = await widget.controller.addRoom(
+                              buildingId: _selectedBuilding!.id,
+                              roomCode: _kodeController.text.trim(),
+                              monthlyPrice: price,
+                              roomStatus: _selectedStatus,
+                              notes: _notesController.text.trim(),
+                            );
+                            setState(() {
+                              _isLoading = false;
+                            });
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    success
+                                        ? "Kamar berhasil ditambahkan!"
+                                        : "Kamar gagal ditambahkan!",
+                                  ),
+                                  backgroundColor: success
+                                      ? Colors.green
+                                      : Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF005D90),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                     elevation: 0,
                   ),
-                  child: _isLoading 
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      )
-                    : const Text(
-                        "Simpan",
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          "Simpan",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -1498,11 +2121,17 @@ class _AddRoomDialogState extends State<_AddRoomDialog> {
                   onPressed: () => Navigator.pop(context),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFFE2E8F0)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                   ),
                   child: const Text(
                     "Batal",
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF005D90)),
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF005D90),
+                    ),
                   ),
                 ),
               ),
@@ -1536,12 +2165,18 @@ class _EditRoomDialogState extends State<_EditRoomDialog> {
   void initState() {
     super.initState();
     _kodeController = TextEditingController(text: widget.room.roomCode);
-    _hargaController = TextEditingController(text: widget.room.monthlyPrice.toString());
+    _hargaController = TextEditingController(
+      text: widget.room.monthlyPrice.toString(),
+    );
     _notesController = TextEditingController(text: widget.room.notes);
     _selectedStatus = widget.room.roomStatus;
 
     if (widget.controller.buildings.isNotEmpty) {
-      _selectedBuilding = widget.controller.buildings.firstWhereOrNull((b) => b.id == widget.room.buildingId) ?? widget.controller.buildings.first;
+      _selectedBuilding =
+          widget.controller.buildings.firstWhereOrNull(
+            (b) => b.id == widget.room.buildingId,
+          ) ??
+          widget.controller.buildings.first;
     }
   }
 
@@ -1605,7 +2240,11 @@ class _EditRoomDialogState extends State<_EditRoomDialog> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: ConstantColor.textSecondaryColor, size: 20),
+                    icon: const Icon(
+                      Icons.close,
+                      color: ConstantColor.textSecondaryColor,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.pop(context),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -1636,7 +2275,10 @@ class _EditRoomDialogState extends State<_EditRoomDialog> {
                     value: _selectedBuilding,
                     isExpanded: true,
                     decoration: const InputDecoration(border: InputBorder.none),
-                    icon: const Icon(Icons.keyboard_arrow_down, color: ConstantColor.textSecondaryColor),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down,
+                      color: ConstantColor.textSecondaryColor,
+                    ),
                     hint: const Text("Pilih Gedung"),
                     items: widget.controller.buildings.map((building) {
                       return DropdownMenuItem<Building>(
@@ -1649,7 +2291,8 @@ class _EditRoomDialogState extends State<_EditRoomDialog> {
                         _selectedBuilding = val;
                       });
                     },
-                    validator: (val) => val == null ? "Wajib memilih gedung" : null,
+                    validator: (val) =>
+                        val == null ? "Wajib memilih gedung" : null,
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -1673,7 +2316,10 @@ class _EditRoomDialogState extends State<_EditRoomDialog> {
               // Input Kode Kamar
               TextFormField(
                 controller: _kodeController,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
                 decoration: _buildInputDecoration("Contoh: A-101"),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) {
@@ -1697,14 +2343,18 @@ class _EditRoomDialogState extends State<_EditRoomDialog> {
               // Input Harga Sewa
               TextFormField(
                 controller: _hargaController,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
                 keyboardType: TextInputType.number,
                 decoration: _buildInputDecoration("Contoh: 2000000"),
                 validator: (val) {
                   if (val == null || val.trim().isEmpty) {
                     return "Harga sewa wajib diisi";
                   }
-                  if (int.tryParse(val.replaceAll(RegExp(r'[^0-9]'), '')) == null) {
+                  if (int.tryParse(val.replaceAll(RegExp(r'[^0-9]'), '')) ==
+                      null) {
                     return "Harga sewa harus berupa angka";
                   }
                   return null;
@@ -1733,10 +2383,19 @@ class _EditRoomDialogState extends State<_EditRoomDialog> {
                   child: DropdownButton<String>(
                     value: _selectedStatus,
                     isExpanded: true,
-                    icon: const Icon(Icons.keyboard_arrow_down, color: ConstantColor.textSecondaryColor),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down,
+                      color: ConstantColor.textSecondaryColor,
+                    ),
                     items: const [
-                      DropdownMenuItem(value: 'available', child: Text('Kosong')),
-                      DropdownMenuItem(value: 'occupied', child: Text('Terisi')),
+                      DropdownMenuItem(
+                        value: 'available',
+                        child: Text('Kosong'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'occupied',
+                        child: Text('Terisi'),
+                      ),
                     ],
                     onChanged: (val) {
                       if (val != null) {
@@ -1767,9 +2426,14 @@ class _EditRoomDialogState extends State<_EditRoomDialog> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _notesController,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
                 maxLines: 2,
-                decoration: _buildInputDecoration("Masukkan catatan kamar jika ada"),
+                decoration: _buildInputDecoration(
+                  "Masukkan catatan kamar jika ada",
+                ),
               ),
               const SizedBox(height: 28),
 
@@ -1778,49 +2442,73 @@ class _EditRoomDialogState extends State<_EditRoomDialog> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : () async {
-                    if (_formKey.currentState!.validate()) {
-                      setState(() {
-                        _isLoading = true;
-                      });
-                      final price = int.tryParse(_hargaController.text.trim().replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
-                      final success = await widget.controller.updateRoom(
-                        id: widget.room.id,
-                        buildingId: _selectedBuilding!.id,
-                        roomCode: _kodeController.text.trim(),
-                        monthlyPrice: price,
-                        roomStatus: _selectedStatus,
-                        notes: _notesController.text.trim(),
-                      );
-                      setState(() {
-                        _isLoading = false;
-                      });
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(success ? "Kamar berhasil diperbarui!" : "Kamar gagal diperbarui!"),
-                            backgroundColor: success ? Colors.green : Colors.red,
-                          ),
-                        );
-                      }
-                    }
-                  },
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          if (_formKey.currentState!.validate()) {
+                            setState(() {
+                              _isLoading = true;
+                            });
+                            final price =
+                                int.tryParse(
+                                  _hargaController.text.trim().replaceAll(
+                                    RegExp(r'[^0-9]'),
+                                    '',
+                                  ),
+                                ) ??
+                                0;
+                            final success = await widget.controller.updateRoom(
+                              id: widget.room.id,
+                              buildingId: _selectedBuilding!.id,
+                              roomCode: _kodeController.text.trim(),
+                              monthlyPrice: price,
+                              roomStatus: _selectedStatus,
+                              notes: _notesController.text.trim(),
+                            );
+                            setState(() {
+                              _isLoading = false;
+                            });
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    success
+                                        ? "Kamar berhasil diperbarui!"
+                                        : "Kamar gagal diperbarui!",
+                                  ),
+                                  backgroundColor: success
+                                      ? Colors.green
+                                      : Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF005D90),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                     elevation: 0,
                   ),
-                  child: _isLoading 
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      )
-                    : const Text(
-                        "Simpan",
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          "Simpan",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -1831,11 +2519,17 @@ class _EditRoomDialogState extends State<_EditRoomDialog> {
                   onPressed: () => Navigator.pop(context),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFFE2E8F0)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                   ),
                   child: const Text(
                     "Batal",
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF005D90)),
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF005D90),
+                    ),
                   ),
                 ),
               ),
@@ -1850,13 +2544,18 @@ class _EditRoomDialogState extends State<_EditRoomDialog> {
 class _DeleteRoomConfirmationDialog extends StatefulWidget {
   final PropertiesController controller;
   final Room room;
-  const _DeleteRoomConfirmationDialog({required this.controller, required this.room});
+  const _DeleteRoomConfirmationDialog({
+    required this.controller,
+    required this.room,
+  });
 
   @override
-  State<_DeleteRoomConfirmationDialog> createState() => _DeleteRoomConfirmationDialogState();
+  State<_DeleteRoomConfirmationDialog> createState() =>
+      _DeleteRoomConfirmationDialogState();
 }
 
-class _DeleteRoomConfirmationDialogState extends State<_DeleteRoomConfirmationDialog> {
+class _DeleteRoomConfirmationDialogState
+    extends State<_DeleteRoomConfirmationDialog> {
   bool _isLoading = false;
 
   @override
@@ -1914,39 +2613,58 @@ class _DeleteRoomConfirmationDialogState extends State<_DeleteRoomConfirmationDi
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: _isLoading ? null : () async {
-                  setState(() {
-                    _isLoading = true;
-                  });
-                  final success = await widget.controller.deleteRoom(widget.room.id);
-                  setState(() {
-                    _isLoading = false;
-                  });
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(success ? "Kamar berhasil dihapus!" : "Kamar gagal dihapus!"),
-                        backgroundColor: success ? Colors.green : Colors.red,
-                      ),
-                    );
-                  }
-                },
+                onPressed: _isLoading
+                    ? null
+                    : () async {
+                        setState(() {
+                          _isLoading = true;
+                        });
+                        final success = await widget.controller.deleteRoom(
+                          widget.room.id,
+                        );
+                        setState(() {
+                          _isLoading = false;
+                        });
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                success
+                                    ? "Kamar berhasil dihapus!"
+                                    : "Kamar gagal dihapus!",
+                              ),
+                              backgroundColor: success
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          );
+                        }
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
                   elevation: 0,
                 ),
-                child: _isLoading 
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : const Text(
-                      "Hapus",
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        "Hapus",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(height: 12),
@@ -1957,11 +2675,17 @@ class _DeleteRoomConfirmationDialogState extends State<_DeleteRoomConfirmationDi
                 onPressed: () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Color(0xFFE2E8F0)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
                 ),
                 child: const Text(
                   "Batal",
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF64748B),
+                  ),
                 ),
               ),
             ),
@@ -1972,7 +2696,11 @@ class _DeleteRoomConfirmationDialogState extends State<_DeleteRoomConfirmationDi
   }
 }
 
-void _showEditRoomModal(BuildContext context, PropertiesController controller, Room room) {
+void _showEditRoomModal(
+  BuildContext context,
+  PropertiesController controller,
+  Room room,
+) {
   showDialog(
     context: context,
     barrierColor: Colors.black.withValues(alpha: 0.5),
@@ -1982,7 +2710,11 @@ void _showEditRoomModal(BuildContext context, PropertiesController controller, R
   );
 }
 
-void _showDeleteRoomConfirmation(BuildContext context, PropertiesController controller, Room room) {
+void _showDeleteRoomConfirmation(
+  BuildContext context,
+  PropertiesController controller,
+  Room room,
+) {
   showDialog(
     context: context,
     barrierColor: Colors.black.withValues(alpha: 0.5),
@@ -2014,7 +2746,9 @@ class _EditBuildingDialogState extends State<_EditBuildingDialog> {
     super.initState();
     _codeController = TextEditingController(text: widget.building.buildingCode);
     _nameController = TextEditingController(text: widget.building.buildingName);
-    _addressController = TextEditingController(text: widget.building.buildingAddress);
+    _addressController = TextEditingController(
+      text: widget.building.buildingAddress,
+    );
     _descController = TextEditingController(text: widget.building.description);
   }
 
@@ -2083,7 +2817,11 @@ class _EditBuildingDialogState extends State<_EditBuildingDialog> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: ConstantColor.textSecondaryColor, size: 20),
+                    icon: const Icon(
+                      Icons.close,
+                      color: ConstantColor.textSecondaryColor,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.pop(context),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -2104,9 +2842,14 @@ class _EditBuildingDialogState extends State<_EditBuildingDialog> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _codeController,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
                 decoration: _buildInputDecoration("Contoh: GDG-A"),
-                validator: (val) => (val == null || val.trim().isEmpty) ? "Kode gedung wajib diisi" : null,
+                validator: (val) => (val == null || val.trim().isEmpty)
+                    ? "Kode gedung wajib diisi"
+                    : null,
               ),
               const SizedBox(height: 16),
 
@@ -2122,9 +2865,14 @@ class _EditBuildingDialogState extends State<_EditBuildingDialog> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _nameController,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
                 decoration: _buildInputDecoration("Contoh: Gedung A"),
-                validator: (val) => (val == null || val.trim().isEmpty) ? "Nama gedung wajib diisi" : null,
+                validator: (val) => (val == null || val.trim().isEmpty)
+                    ? "Nama gedung wajib diisi"
+                    : null,
               ),
               const SizedBox(height: 16),
 
@@ -2140,9 +2888,16 @@ class _EditBuildingDialogState extends State<_EditBuildingDialog> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _addressController,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                decoration: _buildInputDecoration("Contoh: Jl. Contoh No. 1, Surabaya"),
-                validator: (val) => (val == null || val.trim().isEmpty) ? "Alamat gedung wajib diisi" : null,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+                decoration: _buildInputDecoration(
+                  "Contoh: Jl. Contoh No. 1, Surabaya",
+                ),
+                validator: (val) => (val == null || val.trim().isEmpty)
+                    ? "Alamat gedung wajib diisi"
+                    : null,
               ),
               const SizedBox(height: 16),
 
@@ -2158,9 +2913,14 @@ class _EditBuildingDialogState extends State<_EditBuildingDialog> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _descController,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
                 maxLines: 2,
-                decoration: _buildInputDecoration("Contoh: Gedung utama lantai 3"),
+                decoration: _buildInputDecoration(
+                  "Contoh: Gedung utama lantai 3",
+                ),
               ),
               const SizedBox(height: 28),
 
@@ -2169,47 +2929,63 @@ class _EditBuildingDialogState extends State<_EditBuildingDialog> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : () async {
-                    if (_formKey.currentState!.validate()) {
-                      setState(() {
-                        _isLoading = true;
-                      });
-                      final success = await widget.controller.updateBuilding(
-                        id: widget.building.id,
-                        code: _codeController.text.trim(),
-                        name: _nameController.text.trim(),
-                        address: _addressController.text.trim(),
-                        description: _descController.text.trim(),
-                      );
-                      setState(() {
-                        _isLoading = false;
-                      });
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(success ? "Gedung berhasil diperbarui!" : "Gedung berhasil diperbarui secara lokal!"),
-                            backgroundColor: ConstantColor.primaryColor,
-                          ),
-                        );
-                      }
-                    }
-                  },
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          if (_formKey.currentState!.validate()) {
+                            setState(() {
+                              _isLoading = true;
+                            });
+                            final success = await widget.controller
+                                .updateBuilding(
+                                  id: widget.building.id,
+                                  code: _codeController.text.trim(),
+                                  name: _nameController.text.trim(),
+                                  address: _addressController.text.trim(),
+                                  description: _descController.text.trim(),
+                                );
+                            setState(() {
+                              _isLoading = false;
+                            });
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    success
+                                        ? "Gedung berhasil diperbarui!"
+                                        : "Gedung berhasil diperbarui secara lokal!",
+                                  ),
+                                  backgroundColor: ConstantColor.primaryColor,
+                                ),
+                              );
+                            }
+                          }
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF005D90),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                     elevation: 0,
                   ),
-                  child: _isLoading 
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      )
-                    : const Text(
-                        "Simpan",
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          "Simpan",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -2220,11 +2996,17 @@ class _EditBuildingDialogState extends State<_EditBuildingDialog> {
                   onPressed: () => Navigator.pop(context),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFFE2E8F0)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                   ),
                   child: const Text(
                     "Batal",
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF005D90)),
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF005D90),
+                    ),
                   ),
                 ),
               ),
@@ -2239,13 +3021,18 @@ class _EditBuildingDialogState extends State<_EditBuildingDialog> {
 class _DeleteBuildingConfirmationDialog extends StatefulWidget {
   final PropertiesController controller;
   final Building building;
-  const _DeleteBuildingConfirmationDialog({required this.controller, required this.building});
+  const _DeleteBuildingConfirmationDialog({
+    required this.controller,
+    required this.building,
+  });
 
   @override
-  State<_DeleteBuildingConfirmationDialog> createState() => _DeleteBuildingConfirmationDialogState();
+  State<_DeleteBuildingConfirmationDialog> createState() =>
+      _DeleteBuildingConfirmationDialogState();
 }
 
-class _DeleteBuildingConfirmationDialogState extends State<_DeleteBuildingConfirmationDialog> {
+class _DeleteBuildingConfirmationDialogState
+    extends State<_DeleteBuildingConfirmationDialog> {
   bool _isLoading = false;
 
   @override
@@ -2303,39 +3090,58 @@ class _DeleteBuildingConfirmationDialogState extends State<_DeleteBuildingConfir
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: _isLoading ? null : () async {
-                  setState(() {
-                    _isLoading = true;
-                  });
-                  final success = await widget.controller.deleteBuilding(widget.building.id);
-                  setState(() {
-                    _isLoading = false;
-                  });
-                  if (context.mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(success ? "Gedung berhasil dihapus!" : "Gedung gagal dihapus!"),
-                        backgroundColor: success ? Colors.green : Colors.red,
-                      ),
-                    );
-                  }
-                },
+                onPressed: _isLoading
+                    ? null
+                    : () async {
+                        setState(() {
+                          _isLoading = true;
+                        });
+                        final success = await widget.controller.deleteBuilding(
+                          widget.building.id,
+                        );
+                        setState(() {
+                          _isLoading = false;
+                        });
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                success
+                                    ? "Gedung berhasil dihapus!"
+                                    : "Gedung gagal dihapus!",
+                              ),
+                              backgroundColor: success
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          );
+                        }
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
                   elevation: 0,
                 ),
-                child: _isLoading 
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : const Text(
-                      "Hapus",
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        "Hapus",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(height: 12),
@@ -2346,11 +3152,17 @@ class _DeleteBuildingConfirmationDialogState extends State<_DeleteBuildingConfir
                 onPressed: () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Color(0xFFE2E8F0)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
                 ),
                 child: const Text(
                   "Batal",
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF64748B),
+                  ),
                 ),
               ),
             ),

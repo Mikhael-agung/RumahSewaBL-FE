@@ -1,7 +1,12 @@
-import 'dart:ui';
+import 'package:flutter/material.dart';
 
 class ConstantVariable {
   ConstantVariable._();
+  // contex
+  static final GlobalKey<NavigatorState> snavigatorKey =
+      GlobalKey<NavigatorState>();
+  static final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
+      GlobalKey<ScaffoldMessengerState>();
   static String appTitle = "Rumah Sewa Biru Laut";
   static String appSubTitle = "Mencari Rumah Sewa? Di sini Tempatnya.";
   static const String baseUrl = String.fromEnvironment(
