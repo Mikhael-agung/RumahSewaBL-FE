@@ -1,37 +1,52 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/constants/variables.dart';
 
 class ApiService {
   final Dio _dio;
+  static const Duration _errorSnackbarCooldown = Duration(seconds: 2);
+  DateTime? _lastShownAt;
+  String? _lastShownMessage;
 
   ApiService()
-      : _dio = Dio(BaseOptions(
+    : _dio = Dio(
+        BaseOptions(
           baseUrl: ConstantVariable.baseUrl,
           connectTimeout: ConstantVariable.connectTimeout,
           receiveTimeout: ConstantVariable.receiveTimeout,
-        )) {
+        ),
+      ) {
     // Interceptor to automatically add jwt_token & common headers to every request!
-    _dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        final prefs = await SharedPreferences.getInstance();
-        final token = prefs.getString('jwt_token') ?? '';
-        if (token.isNotEmpty) {
-          options.headers['Authorization'] = 'Bearer $token';
-        }
-        options.headers['Accept'] = 'application/json';
-        options.headers['Content-Type'] = 'application/json';
-        return handler.next(options);
-      },
-    ));
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final prefs = await SharedPreferences.getInstance();
+          final token = prefs.getString('jwt_token') ?? '';
+          if (token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          options.headers['Accept'] = 'application/json';
+          options.headers['Content-Type'] = 'application/json';
+          return handler.next(options);
+        },
+      ),
+    );
   }
 
   // GET method
-  Future<Response> get(String path, {Map<String, dynamic>? queryParameters, Options? options}) async {
+  Future<Response> get(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
     try {
       debugPrint("API GET Request to: ${ConstantVariable.baseUrl}$path");
-      return await _dio.get(path, queryParameters: queryParameters, options: options);
+      return await _dio.get(
+        path,
+        queryParameters: queryParameters,
+        options: options,
+      );
     } on DioException catch (e) {
       _handleDioError(e, "GET", path);
       rethrow;
@@ -39,10 +54,20 @@ class ApiService {
   }
 
   // POST method
-  Future<Response> post(String path, {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) async {
+  Future<Response> post(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
     try {
       debugPrint("API POST Request to: ${ConstantVariable.baseUrl}$path");
-      return await _dio.post(path, data: data, queryParameters: queryParameters, options: options);
+      return await _dio.post(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+      );
     } on DioException catch (e) {
       _handleDioError(e, "POST", path);
       rethrow;
@@ -50,10 +75,20 @@ class ApiService {
   }
 
   // PUT method
-  Future<Response> put(String path, {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) async {
+  Future<Response> put(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
     try {
       debugPrint("API PUT Request to: ${ConstantVariable.baseUrl}$path");
-      return await _dio.put(path, data: data, queryParameters: queryParameters, options: options);
+      return await _dio.put(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+      );
     } on DioException catch (e) {
       _handleDioError(e, "PUT", path);
       rethrow;
@@ -61,10 +96,20 @@ class ApiService {
   }
 
   // DELETE method
-  Future<Response> delete(String path, {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) async {
+  Future<Response> delete(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
     try {
       debugPrint("API DELETE Request to: ${ConstantVariable.baseUrl}$path");
-      return await _dio.delete(path, data: data, queryParameters: queryParameters, options: options);
+      return await _dio.delete(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+      );
     } on DioException catch (e) {
       _handleDioError(e, "DELETE", path);
       rethrow;
@@ -76,7 +121,7 @@ class ApiService {
     debugPrint("Status Code: ${e.response?.statusCode}");
     debugPrint("Error Message: ${e.message}");
     debugPrint("Response Data: ${e.response?.data}");
-    
+
     String message = 'Terjadi kesalahan pada server';
     if (e.response != null) {
       final data = e.response?.data;
@@ -85,9 +130,40 @@ class ApiService {
       } else if (data is String) {
         message = data;
       }
-    } else if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.receiveTimeout) {
+    } else if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout) {
       message = 'Koneksi terputus (Timeout)';
     }
+    _showGlobalErrorSnackbar(message);
     throw Exception(message);
+  }
+
+  void _showGlobalErrorSnackbar(String message) {
+    final now = DateTime.now();
+    final isDuplicateMessage = _lastShownMessage == message;
+    final isWithinCooldown =
+        _lastShownAt != null &&
+        now.difference(_lastShownAt!) < _errorSnackbarCooldown;
+
+    if (isDuplicateMessage && isWithinCooldown) {
+      return;
+    }
+
+    _lastShownAt = now;
+    _lastShownMessage = message;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final messenger = ConstantVariable.scaffoldMessengerKey.currentState;
+      if (messenger == null) return;
+
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    });
   }
 }

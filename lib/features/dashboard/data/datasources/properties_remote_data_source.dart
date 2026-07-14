@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:rumah_sewa_biru_laut_fe/core/services/api_service.dart';
 import '../models/building_model.dart';
 
@@ -37,6 +38,7 @@ class PropertiesRemoteDataSourceImpl implements PropertiesRemoteDataSource {
         throw Exception(response.data['message'] ?? 'Failed to get buildings');
       }
     } catch (e) {
+      SnackBar(content: Text("API Error when fetching buildings: $e. Returning empty building data."));
       debugPrint("API Error when fetching buildings: $e. Returning empty building data.");
       return [];
     }

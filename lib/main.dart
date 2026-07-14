@@ -43,6 +43,7 @@ class MyApp extends StatelessWidget {
           child: MaterialApp.router(
             debugShowCheckedModeBanner: true,
             title: ConstantVariable.appTitle,
+            scaffoldMessengerKey: ConstantVariable.scaffoldMessengerKey,
             routerConfig: RouteApp.router,
             theme: ThemeData(
               primaryColor: ConstantColor.primaryColor,

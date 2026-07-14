@@ -45,16 +45,73 @@ class PropertiesController extends GetxController {
   var rooms = <Room>[].obs;
 
   var selectedBuildingId = Rxn<int>();
+  final buildingCurrentPage = 0.obs;
+  final roomCurrentPage = 0.obs;
+  static const int itemsPerPage = 5;
 
   // Filtered rooms list
   List<Room> get filteredRooms => selectedBuildingId.value == null
       ? rooms
-      : rooms.where((room) => room.buildingId == selectedBuildingId.value).toList();
+      : rooms
+            .where((room) => room.buildingId == selectedBuildingId.value)
+            .toList();
+
+  int get buildingTotalPages =>
+      buildings.isEmpty ? 1 : (buildings.length / itemsPerPage).ceil();
+
+  int get roomTotalPages =>
+      filteredRooms.isEmpty ? 1 : (filteredRooms.length / itemsPerPage).ceil();
+
+  List<Building> get paginatedBuildings {
+    final start = buildingCurrentPage.value * itemsPerPage;
+    final end = (start + itemsPerPage).clamp(0, buildings.length);
+    if (start >= buildings.length) {
+      return const [];
+    }
+    return buildings.sublist(start, end);
+  }
+
+  List<Room> get paginatedRooms {
+    final source = filteredRooms;
+    final start = roomCurrentPage.value * itemsPerPage;
+    final end = (start + itemsPerPage).clamp(0, source.length);
+    if (start >= source.length) {
+      return const [];
+    }
+    return source.sublist(start, end);
+  }
 
   @override
   void onInit() {
     super.onInit();
+    ever<List<Building>>(buildings, (_) {
+      final maxPage = buildingTotalPages - 1;
+      if (buildingCurrentPage.value > maxPage) {
+        buildingCurrentPage.value = maxPage < 0 ? 0 : maxPage;
+      }
+    });
+    ever<List<Room>>(rooms, (_) {
+      final maxPage = roomTotalPages - 1;
+      if (roomCurrentPage.value > maxPage) {
+        roomCurrentPage.value = maxPage < 0 ? 0 : maxPage;
+      }
+    });
+    ever<int?>(selectedBuildingId, (_) {
+      roomCurrentPage.value = 0;
+    });
     fetchPropertiesData();
+  }
+
+  void setBuildingPage(int page) {
+    final maxPage = buildingTotalPages - 1;
+    if (page < 0 || page > maxPage) return;
+    buildingCurrentPage.value = page;
+  }
+
+  void setRoomPage(int page) {
+    final maxPage = roomTotalPages - 1;
+    if (page < 0 || page > maxPage) return;
+    roomCurrentPage.value = page;
   }
 
   Future<void> fetchPropertiesData() async {
@@ -63,10 +120,7 @@ class PropertiesController extends GetxController {
       isBuildingsLoading.value = true;
       isRoomsLoading.value = true;
 
-      await Future.wait([
-        fetchBuildings(),
-        fetchRooms(),
-      ]);
+      await Future.wait([fetchBuildings(), fetchRooms()]);
     } catch (e) {
       // Handle error if any
     } finally {
@@ -123,7 +177,9 @@ class PropertiesController extends GetxController {
       } else {
         await Future.delayed(const Duration(milliseconds: 500));
         final newRoom = Room(
-          id: rooms.isEmpty ? 1 : (rooms.map((r) => r.id).reduce((a, b) => a > b ? a : b) + 1),
+          id: rooms.isEmpty
+              ? 1
+              : (rooms.map((r) => r.id).reduce((a, b) => a > b ? a : b) + 1),
           buildingId: buildingId,
           roomCode: roomCode,
           monthlyPrice: monthlyPrice,
@@ -214,7 +270,10 @@ class PropertiesController extends GetxController {
         // Fallback for direct testing
         await Future.delayed(const Duration(milliseconds: 500));
         final newBuilding = Building(
-          id: buildings.isEmpty ? 1 : (buildings.map((b) => b.id).reduce((a, b) => a > b ? a : b) + 1),
+          id: buildings.isEmpty
+              ? 1
+              : (buildings.map((b) => b.id).reduce((a, b) => a > b ? a : b) +
+                    1),
           buildingCode: code,
           buildingName: name,
           buildingAddress: address,
@@ -225,10 +284,12 @@ class PropertiesController extends GetxController {
       return true;
     } catch (e) {
       print("Error calling AddBuildingUseCase: $e");
-      
+
       // Fallback/offline demo update
       final newBuilding = Building(
-        id: buildings.isEmpty ? 1 : (buildings.map((b) => b.id).reduce((a, b) => a > b ? a : b) + 1),
+        id: buildings.isEmpty
+            ? 1
+            : (buildings.map((b) => b.id).reduce((a, b) => a > b ? a : b) + 1),
         buildingCode: code,
         buildingName: name,
         buildingAddress: address,
@@ -275,7 +336,7 @@ class PropertiesController extends GetxController {
       return true;
     } catch (e) {
       print("Error calling UpdateBuildingUseCase: $e");
-      
+
       // Fallback/offline demo update
       final updated = Building(
         id: id,
